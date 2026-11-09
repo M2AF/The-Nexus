@@ -5,7 +5,7 @@ const { pathToFileURL } = require('node:url');
 const { Worker } = require('node:worker_threads');
 const { spawn } = require('node:child_process');
 const { createHash } = require('node:crypto');
-const { launchPlan } = require('./lib/launch');
+const { launchPlan,validateExecutable } = require('./lib/launch');
 const {mergeLibraries,normalizeOwnedImport,clientPlan}=require('./lib/catalog');
 const {readWavedashGame}=require('./lib/indie-platforms');
 const {ChainLensClient,ORIGIN:CHAINLENS_ORIGIN}=require('./lib/chainlens-client');
@@ -125,7 +125,7 @@ app.whenReady().then(() => {
   handle('discover:open',async(key,provider,region)=>{
     discover.open(key,provider,region); // Validate that this exact listing exists in the catalog.
     const offer=discover.find(key,region).offers.find(item=>item.provider===provider);
-    return openStore(storeDestination(provider,offer.id,region,offer.slug),{hasClient:async url=>{try{const info=await app.getApplicationInfoForProtocol(url);return !!info.name&&!!info.path&&fs.existsSync(info.path);}catch{return url.startsWith('msxbox:')&&!!app.getApplicationNameForProtocol(url);}},openExternal:url=>shell.openExternal(url)});
+    return openStore(storeDestination(provider,offer.id,region,offer.slug),{hasClient:async url=>{if(process.platform==='linux')return !!app.getApplicationNameForProtocol(url);try{const info=await app.getApplicationInfoForProtocol(url);return !!info.name&&!!info.path&&fs.existsSync(info.path);}catch{return url.startsWith('msxbox:')&&!!app.getApplicationNameForProtocol(url);}},openExternal:url=>shell.openExternal(url)});
   });
   handle('library:scan', scan);
   handle('owned:sync',async(account,itchAccount)=>{for(const value of [account,itchAccount])if(value&&!/^\d+$/.test(String(value)))throw new Error('Invalid library account.');if(account)state.galaxyAccount=String(account);if(itchAccount)state.itchAccount=String(itchAccount);return scan();});
@@ -159,11 +159,11 @@ app.whenReady().then(() => {
     save(); return snapshot();
   });
   handle('library:add', async () => {
-    const result = await dialog.showOpenDialog(win, { title: 'Add a game executable or shortcut', properties: ['openFile'], filters: [{ name: 'Games and shortcuts', extensions: ['exe', 'lnk'] }] });
+    const result = await dialog.showOpenDialog(win, { title: process.platform==='win32'?'Add a game executable or shortcut':'Add a native game executable or AppImage', properties: ['openFile'], ...(process.platform==='win32'?{filters:[{name:'Games and shortcuts',extensions:['exe','lnk']}]}:{}) });
     if (result.canceled) return { canceled: true };
     const exe = result.filePaths[0];
-    if (!/\.(exe|lnk)$/i.test(exe) || !fs.statSync(exe).isFile()) throw new Error('Select a game executable or shortcut.');
-    const game = { provider: 'custom', providerLabel: 'Local game', id: createHash('sha256').update(exe.toLowerCase()).digest('hex'), name: path.basename(exe, path.extname(exe)), installLocation: path.dirname(exe), launchTarget: { exe } };
+    validateExecutable(exe);
+    const game = { provider: 'custom', providerLabel: 'Local game', id: createHash('sha256').update(process.platform==='win32'?exe.toLowerCase():exe).digest('hex'), name: path.basename(exe, path.extname(exe)), installLocation: path.dirname(exe), launchTarget: { exe } };
     if (!state.games.some(g => key(g) === key(game))) state.games.push(game);
     save(); return snapshot();
   });

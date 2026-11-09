@@ -1,0 +1,116 @@
+name: Desktop builds
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref_type != 'tag' }}
+
+jobs:
+  build:
+    name: Build ${{ matrix.platform }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-2025
+            platform: Windows
+            command: build:win
+          - os: ubuntu-24.04
+            platform: Linux
+            command: build:linux
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    env:
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Validate release tag
+        if: github.ref_type == 'tag'
+        run: node -e "if(process.env.GITHUB_REF_NAME!=='v'+require('./package.json').version)throw Error('Tag must match package.json version')"
+      - name: Install Linux runtime dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libasound2t64 libgtk-3-0t64 libnss3 libgbm1 xvfb
+      - run: npm ci
+      - run: npm run check
+      - run: npm test
+      - name: Package application
+        run: npm run ${{ matrix.command }}
+      - name: Verify package contents and checksum
+        run: npm run verify:artifact
+      - name: Smoke test Windows application
+        if: runner.os == 'Windows'
+        run: npm run smoke:packaged
+      - name: Extract and smoke test Linux AppImage
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          images=(dist/*.AppImage)
+          "${images[0]}" --appimage-extract > /dev/null
+          test -x squashfs-root/the-nexus
+          xvfb-run -a npm run smoke:packaged
+        env:
+          NEXUS_SMOKE_EXECUTABLE: squashfs-root/the-nexus
+      - name: Upload ${{ matrix.platform }} build
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: The-Nexus-${{ matrix.platform }}-x64
+          path: |
+            dist/*.exe
+            dist/*.AppImage
+            dist/*.sha256
+            dist/build-info-*.json
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+      - name: Upload smoke-test evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: smoke-${{ matrix.platform }}
+          path: dist/smoke-*
+          if-no-files-found: ignore
+          retention-days: 7
+
+  draft-release:
+    name: Prepare draft release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          pattern: The-Nexus-*-x64
+          path: release-assets
+          merge-multiple: true
+      - name: Create or update draft release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          if gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft > release-state.txt; then
+            test "$(cat release-state.txt)" = true || { echo 'Refusing to modify an already published release'; exit 1; }
+          else
+            gh release create "$RELEASE_TAG" --verify-tag --draft --title "The Nexus $RELEASE_TAG" --generate-notes
+          fi
+          gh release upload "$RELEASE_TAG" release-assets/* --clobber

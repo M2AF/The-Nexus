@@ -1,10 +1,30 @@
 # The Nexus
 
-A standalone Windows game launcher adapted from DesktopX. DesktopX and Agent Office are unchanged.
+A standalone game launcher for Windows and Linux, adapted from DesktopX.
 
-## Run
+## Downloads and running the app
 
-Open `dist/The-Nexus-0.5.0-portable.exe`, or use `npm install` and `npm start` from this folder. Close an older Nexus window before opening the new executable. Older library records refresh automatically while preserving favorites, launch history, manually added games and artwork overrides.
+GitHub Actions builds are available from [Desktop builds](https://github.com/M2AF/The-Nexus/actions/workflows/build.yml). Open a successful run and download the Windows or Linux artifact. The repository is private, so downloading from GitHub requires repository access; a downloaded executable/AppImage can be shared separately.
+
+- Windows x64: extract the artifact ZIP and open `The-Nexus-<version>-portable.exe`.
+- Linux x64: extract the artifact ZIP, mark `The-Nexus-<version>-linux-x64.AppImage` executable (`chmod +x`), then run it. If the system cannot mount AppImages using FUSE, run with `APPIMAGE_EXTRACT_AND_RUN=1`.
+- Close an older Nexus window before starting an updated build. Personal libraries, preferences and sessions are stored outside the executable in Electron's per-user app data directory.
+
+## Development and automated builds
+
+Use Node.js 24, then run `npm ci`, `npm run check`, `npm test`, and `npm start`. Package on the matching OS with `npm run build:win` or `npm run build:linux`. Windows produces a portable EXE; Linux produces an AppImage. No signing certificates or store/account secrets are required for these unsigned builds.
+
+The pinned GitHub Actions workflow runs on pushes to `main`, pull requests, version tags, and manual dispatch. Both OS jobs run static checks, unit tests, package verification, SHA-256 generation and an isolated packaged UI/IPC smoke test. Linux smoke testing runs the executable extracted from the actual AppImage under Xvfb. Downloadable artifacts are retained for 14 days; smoke evidence is retained for 7 days. The Linux CI smoke test uses `--no-sandbox` only in its isolated hosted runner; the packaged app does not force that setting for users.
+
+To prepare a release, update the version in `package.json` and `package-lock.json`, commit it, and push the matching `v<version>` tag. Once both builds pass, the workflow creates a **draft** GitHub release containing both builds and checksums. Publishing the draft remains a manual action in GitHub Releases. A tag that disagrees with the package version fails validation.
+
+Optimized runtime branding is tracked under `app/assets`. Large original Canva/logo/video exports remain local in `Logos/`; builds do not require those originals. `dist/`, `output/`, dependencies, credentials, caches, local databases and personal library files are excluded from Git. CI also verifies an allowlist of packaged files.
+
+## Linux support
+
+Steam discovery supports standard and Flatpak Steam locations; Steam handles its own native/Proton game launching. Native executable files and AppImages can be added manually after enabling their executable permission. Discover, library imports, controller navigation and the Nexus UI are shared between platforms. Store buttons use registered Linux protocol handlers where available and otherwise open the website.
+
+Xbox installation discovery, GOG Galaxy registry/cache integration, Windows shortcuts, and the Open on startup switch remain Windows features. This build does not add Heroic/Lutris integration or make Windows-only games native Linux applications. Linux packaging/startup checks do not replace testing games and controllers on a real Linux desktop.
 
 ## Installed, Owned and Web
 

@@ -1,21 +1,25 @@
 {
   "name": "the-nexus-launcher",
   "productName": "The Nexus",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "All your installed games. One home.",
   "author": "criptoejesus",
   "private": true,
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "check": "node --check main.js && node --check preload.js && node --check app/app.js && node --check app/controller.js && node --check lib/catalog.js && node --check lib/indie-platforms.js && node --check lib/scanners.js && node --check lib/launch.js && node --check lib/artwork.js && node --check lib/scan-worker.js && node --check lib/chainlens-client.js && node --check app/social.js && node --check app/profile-media.js && node --check lib/discover.js && node --check app/discover.js && node --check lib/appearance.js && node --check app/appearance.js && node --check lib/window-settings.js && node --check app/window.js && node --check lib/store-opening.js && node --check lib/epic-discover.js && node --check app/rich-description.js && node --check lib/library-preferences.js",
+    "check": "node --check main.js && node --check preload.js && node --check app/app.js && node --check app/controller.js && node --check lib/catalog.js && node --check lib/indie-platforms.js && node --check lib/scanners.js && node --check lib/launch.js && node --check lib/artwork.js && node --check lib/scan-worker.js && node --check lib/chainlens-client.js && node --check app/social.js && node --check app/profile-media.js && node --check lib/discover.js && node --check app/discover.js && node --check lib/appearance.js && node --check app/appearance.js && node --check lib/window-settings.js && node --check app/window.js && node --check lib/store-opening.js && node --check lib/epic-discover.js && node --check app/rich-description.js && node --check lib/library-preferences.js && node --check scripts/smoke-packaged.cjs && node --check scripts/verify-artifact.cjs",
     "test": "node --test test/*.test.js",
-    "build:win": "electron-builder --win portable --x64"
+    "build:win": "electron-builder --win portable --x64 --publish never",
+    "build:linux": "electron-builder --linux AppImage --x64 --publish never",
+    "smoke:packaged": "node scripts/smoke-packaged.cjs",
+    "verify:artifact": "node scripts/verify-artifact.cjs"
   },
   "devDependencies": {
     "electron": "45.2.3",
     "electron-builder": "26.18.0",
     "lucide-static": "1.70.0",
+    "playwright": "1.64.1",
     "simple-icons": "16.36.0"
   },
   "build": {
@@ -36,6 +40,26 @@
       "signExecutable": false
     },
     "artifactName": "The-Nexus-${version}-portable.${ext}",
-    "compression": "store"
-  }
+    "compression": "normal",
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "executableName": "the-nexus",
+      "category": "Game",
+      "icon": "app/assets/icon.png",
+      "artifactName": "The-Nexus-${version}-linux-${arch}.${ext}"
+    },
+    "publish": null
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/M2AF/The-Nexus.git"
+  },
+  "homepage": "https://github.com/M2AF/The-Nexus"
 }

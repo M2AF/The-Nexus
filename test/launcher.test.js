@@ -66,8 +66,15 @@ test('moved Xbox installs support AppX manifests and Game.config while DLC and s
 });
 test('GOG manifests discover moved installs and keep their executable arguments', () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(),'nexus-gog-'));
-  const folder=path.join(root,'GOG','Games','A Game'); fs.mkdirSync(folder,{recursive:true}); fs.writeFileSync(path.join(folder,'play.exe'),'fixture');
+  const folder=path.join(root,'GOG','Games','A Game'); fs.mkdirSync(folder,{recursive:true}); fs.writeFileSync(path.join(folder,'play.exe'),'fixture');if(process.platform!=='win32')fs.chmodSync(path.join(folder,'play.exe'),0o755);
   fs.writeFileSync(path.join(folder,'goggame-123.info'),JSON.stringify({gameId:'123',name:'A Game',playTasks:[{type:'FileTask',category:'game',isPrimary:true,path:'play.exe',arguments:'--language en'}]}));
   try { const [game]=scanGogFolders([root]); assert.equal(game.name,'A Game'); assert.deepEqual(launchPlan(game).args,['--language','en']); }
   finally {fs.rmSync(root,{recursive:true,force:true});}
+});
+test('Native executables can be selected on the host platform',()=>{
+ assert.equal(launchPlan({provider:'custom',launchTarget:{exe:process.execPath}}).exe,process.execPath);
+});
+test('POSIX executable permissions are required and desktop entries are not executed as programs',{skip:process.platform==='win32'},()=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'nexus-native-'));const exe=path.join(dir,'game.AppImage'),desktop=path.join(dir,'game.desktop');
+ try{fs.writeFileSync(exe,'#!/bin/sh\nexit 0\n',{mode:0o644});assert.throws(()=>launchPlan({provider:'custom',launchTarget:{exe}}));fs.chmodSync(exe,0o755);assert.equal(launchPlan({provider:'custom',launchTarget:{exe}}).exe,exe);fs.writeFileSync(desktop,'[Desktop Entry]\nExec=game',{mode:0o755});assert.throws(()=>launchPlan({provider:'custom',launchTarget:{exe:desktop}}));}finally{fs.rmSync(dir,{recursive:true,force:true});}
 });
