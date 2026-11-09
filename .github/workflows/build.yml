@@ -52,7 +52,17 @@ jobs:
       - run: npm run check
       - run: npm test
       - name: Package application
-        run: npm run ${{ matrix.command }}
+        shell: bash
+        run: |
+          # npm ci already downloads and checksum-verifies the host Electron runtime.
+          # Reuse it, and retry once for transient build-tool download failures.
+          for attempt in 1 2; do
+            if npm run ${{ matrix.command }} -- --config.electronDist=node_modules/electron/dist; then
+              exit 0
+            fi
+            if [ "$attempt" = 1 ]; then sleep 10; fi
+          done
+          exit 1
       - name: Verify package contents and checksum
         run: npm run verify:artifact
       - name: Smoke test Windows application
