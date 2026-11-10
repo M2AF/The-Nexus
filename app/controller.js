@@ -19,6 +19,7 @@
   function move(dx,dy){
     begin('focus');const list=candidates();if(!list.length)return;
     const from=list.includes(document.activeElement)?document.activeElement:list.includes(target)?target:null;
+    if(from?.matches('input[type=range]')&&dx){from.value=String(Number(from.value)+dx*Number(from.step||1));from.dispatchEvent(new Event('input',{bubbles:true}));from.dispatchEvent(new Event('change',{bubbles:true}));return;}
     if(!from){focus(list.filter(el=>{const r=el.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight;})[0]||list[0]);return;}
     const rect=from.getBoundingClientRect(),cx=rect.x+rect.width/2,cy=rect.y+rect.height/2;
     let best=null,score=Infinity;
@@ -63,6 +64,7 @@
     const el=mode==='focus'&&document.activeElement!==document.body?document.activeElement:atCursor();if(!el||el.disabled)return;
     if(el.matches('input:not([type=checkbox]):not([type=radio]):not([type=range]),textarea')){keyboardTarget=el;keyboardSelection=[el.selectionStart??el.value.length,el.selectionEnd??el.value.length];actions.querySelectorAll('button').forEach(button=>{if(button.textContent==='New line')button.hidden=el.tagName!=='TEXTAREA';});updatePreview();keyboard.showModal();begin('focus');focus(keyboard.querySelector('[data-key="Q"]'));return;}
     if(el.tagName==='SELECT'){openChoices(el);return;}
+    if(el.matches('input[type=range]')){el.focus({preventScroll:true});if(mode!=='focus'){const rect=el.getBoundingClientRect(),min=Number(el.min||0),max=Number(el.max||100);el.value=String(min+(max-min)*Math.max(0,Math.min(1,(x-rect.left)/rect.width)));el.dispatchEvent(new Event('input',{bubbles:true}));}return;}
     const previousScope=scope();el.focus({preventScroll:true});el.click();if(scope()!==previousScope){begin('focus');focus(document.activeElement);}cursor.classList.add('pressed');setTimeout(()=>cursor.classList.remove('pressed'),130);
   }
   function scroll(value){if(!value)return;let el=mode==='focus'?document.activeElement:document.elementFromPoint(x,y);const modal=scope();

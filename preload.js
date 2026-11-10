@@ -10,6 +10,7 @@ contextBridge.exposeInMainWorld('nexus', {
   windowAction:action=>ipcRenderer.invoke('window:action',action),
   onWindowChange:callback=>{const listener=(_event,state)=>callback(state);ipcRenderer.on('window:changed',listener);return ()=>ipcRenderer.removeListener('window:changed',listener);},
   startup:enabled=>ipcRenderer.invoke('settings:startup',enabled),
+  theme:value=>ipcRenderer.invoke('appearance:theme',value),
   logo:variant=>ipcRenderer.invoke('appearance:logo',variant),
   discover:options=>ipcRenderer.invoke('discover:browse',options),
   discoverDetails:(key,region)=>ipcRenderer.invoke('discover:details',key,region),

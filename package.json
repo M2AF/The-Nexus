@@ -1,14 +1,14 @@
 {
   "name": "the-nexus-launcher",
   "productName": "The Nexus",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "All your installed games. One home.",
   "author": "criptoejesus",
   "private": true,
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "check": "node --check main.js && node --check preload.js && node --check app/app.js && node --check app/controller.js && node --check lib/catalog.js && node --check lib/indie-platforms.js && node --check lib/scanners.js && node --check lib/launch.js && node --check lib/artwork.js && node --check lib/scan-worker.js && node --check lib/chainlens-client.js && node --check app/social.js && node --check app/profile-media.js && node --check lib/discover.js && node --check app/discover.js && node --check lib/appearance.js && node --check app/appearance.js && node --check lib/window-settings.js && node --check app/window.js && node --check lib/store-opening.js && node --check lib/epic-discover.js && node --check app/rich-description.js && node --check lib/library-preferences.js && node --check scripts/smoke-packaged.cjs && node --check scripts/verify-artifact.cjs",
+    "check": "node --check main.js && node --check preload.js && node --check app/app.js && node --check app/controller.js && node --check lib/catalog.js && node --check lib/indie-platforms.js && node --check lib/scanners.js && node --check lib/launch.js && node --check lib/artwork.js && node --check lib/scan-worker.js && node --check lib/chainlens-client.js && node --check app/social.js && node --check app/profile-media.js && node --check lib/discover.js && node --check app/discover.js && node --check lib/appearance.js && node --check app/appearance.js && node --check lib/window-settings.js && node --check app/window.js && node --check lib/store-opening.js && node --check lib/epic-discover.js && node --check app/rich-description.js && node --check lib/library-preferences.js && node --check scripts/smoke-packaged.cjs && node --check scripts/verify-artifact.cjs && node --check app/theme.js && node --check app/theme-colors.js",
     "test": "node --test test/*.test.js",
     "build:win": "electron-builder --win portable --x64 --publish never",
     "build:linux": "electron-builder --linux AppImage --x64 --publish never",

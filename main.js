@@ -11,6 +11,7 @@ const {readWavedashGame}=require('./lib/indie-platforms');
 const {ChainLensClient,ORIGIN:CHAINLENS_ORIGIN}=require('./lib/chainlens-client');
 const {DiscoverCatalog}=require('./lib/discover');
 const {LOGOS,logoSettings}=require('./lib/appearance');
+const Theme=require('./app/theme-colors');
 const {startupTarget,startupEnabled}=require('./lib/window-settings');
 const {storeDestination,openStore}=require('./lib/store-opening');
 const {LIBRARY_STORES,libraryStores}=require('./lib/library-preferences');
@@ -83,8 +84,9 @@ app.whenReady().then(() => {
     if (!Array.isArray(loaded.games) || !Array.isArray(loaded.favorites) || !loaded.history || typeof loaded.history !== 'object') throw new Error('Invalid library');
     state = { ...state, ...loaded };
   } catch { if (fs.existsSync(stateFile)) fs.copyFileSync(stateFile, stateFile + `.backup-${Date.now()}`); }
-  win = new BrowserWindow({ width: 1440, height: 940, minWidth: 800, minHeight: 600, backgroundColor: '#0c1018', title: 'The Nexus', icon: path.join(__dirname,'app/assets/icon.png'), autoHideMenuBar: true,
-    titleBarStyle:'hidden',titleBarOverlay:{color:'#0c1018',symbolColor:'#9aabbf',height:32},
+  try{state.theme=Theme.settings(state.theme);}catch{state.theme={...Theme.defaults};}
+  win = new BrowserWindow({ width: 1440, height: 940, minWidth: 800, minHeight: 600, backgroundColor: Theme.palette(state.theme).bg, title: 'The Nexus', icon: path.join(__dirname,'app/assets/icon.png'), autoHideMenuBar: true,
+    frame:false,
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, sandbox: true, nodeIntegration: false } });
   win.setMenu(null);
   const windowStatus=()=>({fullscreen:win.isFullScreen(),maximized:win.isMaximized()});
@@ -92,7 +94,7 @@ app.whenReady().then(() => {
   for(const event of ['enter-full-screen','leave-full-screen','maximize','unmaximize'])win.on(event,sendWindowStatus);
   const toggleFullscreen=()=>{win.setFullScreen(!win.isFullScreen());return windowStatus();};
   handle('window:state',windowStatus);
-  handle('window:action',action=>{if(action==='fullscreen')return toggleFullscreen();if(action==='maximize'){if(win.isMaximized())win.unmaximize();else win.maximize();return windowStatus();}throw Error('Unknown window action.');});
+  handle('window:action',action=>{if(action==='minimize'){win.minimize();return windowStatus();}if(action==='close'){win.close();return;}if(action==='fullscreen')return toggleFullscreen();if(action==='maximize'){if(win.isMaximized())win.unmaximize();else win.maximize();return windowStatus();}throw Error('Unknown window action.');});
   const loginTarget=startupTarget({packaged:app.isPackaged,platform:process.platform,portableExecutable:process.env.PORTABLE_EXECUTABLE_FILE,execPath:process.execPath});
   const startupStatus=()=>{if(!loginTarget)return {available:false,enabled:false};return {available:true,enabled:startupEnabled(app.getLoginItemSettings(loginTarget),loginTarget)};};
   handle('settings:startup',enabled=>{if(enabled!==undefined){if(typeof enabled!=='boolean')throw Error('Choose whether to open at startup.');if(!loginTarget)throw Error('Startup is available in the packaged Windows launcher.');if(!fs.existsSync(loginTarget.path))throw Error('Keep the portable launcher in a permanent folder before enabling startup.');app.setLoginItemSettings({...loginTarget,openAtLogin:enabled,enabled});}return startupStatus();});
@@ -102,6 +104,7 @@ app.whenReady().then(() => {
   state.logoAnimated=typeof state.logoAnimated==='boolean'?state.logoAnimated:state.logoVariant==='animated';
   state.logoVariant=Object.hasOwn(LOGOS,state.logoVariant)?state.logoVariant:'blue';
   const updateLogoIcon=()=>{const file=path.join(__dirname,'app/assets',LOGOS[state.logoVariant].file);if(fs.existsSync(file))win.setIcon(file);};updateLogoIcon();
+  handle('appearance:theme',value=>{if(value!==undefined){state.theme=Theme.settings(value);save();win.setBackgroundColor(Theme.palette(state.theme).bg);}return state.theme;});
   handle('appearance:logo',variant=>{if(variant!==undefined){Object.assign(state,logoSettings(variant));save();updateLogoIcon();}return {logoVariant:state.logoVariant,logoAnimated:state.logoAnimated};});
   const socialFixture=process.env.NEXUS_SOCIAL_FIXTURE==='1'&&!!process.env.NEXUS_TEST_DATA;
   social=new ChainLensClient({directory:app.getPath('userData'),safeStorage,openExternal:url=>shell.openExternal(url),origin:socialFixture?process.env.NEXUS_SOCIAL_ORIGIN:CHAINLENS_ORIGIN,allowLoopback:socialFixture,onChange:status=>{if(!win.isDestroyed())win.webContents.send('chainlens:changed',status);}});
