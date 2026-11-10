@@ -83,7 +83,7 @@ function render() {
   }));
   document.querySelectorAll('[data-view]').forEach(button => button.classList.toggle('active', view === button.dataset.view && provider === 'all'));
   const title = provider !== 'all' ? providers[provider] : view === 'favorites' ? 'Favorites' : view === 'recent' ? 'Recently launched' : shelf==='web'?'Web games':shelf==='installed'?'Installed games':'Owned games';
-  $('section-title').textContent = title; $('breadcrumb').textContent = title === 'All games' ? 'Library' : title;
+  $('section-title').textContent = title;
   $('result-count').textContent = games.length;
   $('library-roots').replaceChildren(...(state.libraryRoots || []).map(root => node('div','library-root',root)));
   $('games').replaceChildren(...games.slice(0,visibleLimit).map(card));
@@ -94,7 +94,7 @@ function render() {
   $('empty-title').textContent = !libraryStores.length?'Choose a store to show.':query ? 'No games match your search.' : view === 'favorites' ? 'Keep your favorites close.' : view === 'recent' ? 'Your next session starts here.' : provider !== 'all' ? `No ${providers[provider]} games found.` : shelf==='owned'?'Bring your owned library together.':'Your library starts here.';
   $('empty-description').textContent = !libraryStores.length?'Turn on one or more stores above to show your games.':query ? 'Try another title or clear your filters.' : view === 'favorites' ? 'Select the star on a game to save it here.' : view === 'recent' ? 'Games you launch through The Nexus will appear here.' : 'Scan for installed games, or add a game executable or shortcut yourself.';
   $('empty-action').textContent = narrowed ? 'Show all games' : shelf==='owned'?'Sync libraries':'Scan for games';
-  $('empty-action').onclick = narrowed ? async () => { view = 'all'; provider = 'all'; query = ''; $('search').value = '';const result=await call('libraryStores',Object.keys(providers));if(result?.stores){libraryStores=result.stores;state.libraryStores=result.stores;}render(); } : shelf==='owned'?()=> $('sources-dialog').showModal():scan;
+  $('empty-action').onclick = narrowed ? async () => { view = 'all'; provider = 'all'; query = ''; window.NexusSearch.setQuery('library','');const result=await call('libraryStores',Object.keys(providers));if(result?.stores){libraryStores=result.stores;state.libraryStores=result.stores;}render(); } : shelf==='owned'?()=> $('sources-dialog').showModal():scan;
   if(shelf==='web'&&!narrowed){$('empty-title').textContent='Your browser games start here.';$('empty-description').textContent='Add a Wavedash game link above, or refresh the public catalog.';$('empty-action').textContent='Refresh web games';}
   $('scan-status').textContent = busy ? 'Discovering installed games…' : state.lastScan ? `${state.games.filter(game=>game.installed).length} installed · ${state.games.filter(game=>game.owned).length} in owned libraries · Last scan ${new Date(state.lastScan).toLocaleString()}` : 'Ready when you are.';
   $('catalog-status').textContent=state.ownedSync?.available ? `${state.ownedGames?.length || state.games.filter(game=>game.owned).length} library entries · Imported ${new Date(state.ownedSync.importedAt).toLocaleString()}${state.ownedSync.updatedAt?' · Galaxy cache updated '+state.ownedSync.updatedAt:''}` : state.ownedSync?.message || 'Sync to look for locally connected libraries.';
@@ -148,10 +148,10 @@ function details(game) {
   if (game.provider === 'custom') { const remove = node('button', 'button danger', 'Remove from library'); remove.onclick = async () => { const result = await call('remove', game.key); if (result?.games) { apply(result); $('detail').close(); toast('Removed from your library. Game files are untouched.'); } }; actions.append(remove); }
   body.append(actions); if (!$('detail').open) $('detail').showModal();
 }
-$('search').oninput = event => { query = event.target.value.trim().toLowerCase(); render(); };
+$('search').oninput = event => { if(window.NexusSearch.context!=='library')return;query = event.target.value.trim().toLowerCase(); render(); };
 $('sort').onchange = render;
 document.querySelectorAll('[data-view]').forEach(button => { button.onclick = () => { view = button.dataset.view; provider = 'all'; render(); }; });
-document.querySelector('.brand').onclick = event => { event.preventDefault(); view = 'all'; provider = 'all'; query = ''; $('search').value = ''; render(); };
+document.querySelector('.brand').onclick = event => { event.preventDefault(); view = 'all'; provider = 'all'; query = ''; window.NexusSearch.setQuery('library',''); render(); };
 for (const id of ['scan', 'settings-scan']) $(id).onclick = scan;
 $('settings').onclick = () => $('settings-dialog').showModal();
 $('export').onclick = async () => { const result = await call('export'); if (result?.success) toast('Library exported.'); };
@@ -167,9 +167,8 @@ $('web-add').onclick=async()=>{const url=$('web-url').value.trim();if(!url){$('w
 $('import-owned').onclick=async()=>apply(await call('importOwned'));
 document.querySelectorAll('dialog .close').forEach(button => { button.onclick = () => button.closest('dialog').close(); });
 for (const id of ['grid-view', 'list-view']) $(id).onclick = () => { const list = id === 'list-view'; $('games').classList.toggle('list-mode', list); $('grid-view').setAttribute('aria-pressed', !list); $('list-view').setAttribute('aria-pressed', list); };
-document.addEventListener('keydown', event => { if (!$('library-page').hidden && event.key === '/' && !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName) && !document.querySelector('dialog[open]')) { event.preventDefault(); $('search').focus(); } });
 for (const [id, name, label] of [['add','plus','Add game'],['scan','refresh-cw','Scan library'],['settings-scan','refresh-cw','Rescan'],['export','download','Export'],['hero-details','external-link','View game']]) buttonIcon(id,name,label);
-for (const [selector, name] of [['[data-view=all]>span','library'],['[data-view=favorites]>span','star'],['[data-view=recent]>span','clock-3'],['.search>span','search'],['.empty-icon','sparkles']]) document.querySelector(selector).replaceChildren(icon(name));
+for (const [selector, name] of [['[data-view=all]>span','library'],['[data-view=favorites]>span','star'],['[data-view=recent]>span','clock-3'],['.empty-icon','sparkles']]) document.querySelector(selector).replaceChildren(icon(name));
 $('settings').replaceChildren(icon('settings-2'), node('span','','Settings & library'), icon('arrow-up-right'));
 for (const id of ['grid-view','list-view']) $(id).replaceChildren(icon(id === 'grid-view' ? 'layout-grid' : 'list'));
 const portalLogo = node('img'); portalLogo.src = 'assets/logo.png'; portalLogo.alt = ''; document.querySelector('.hero-orbit').replaceChildren(portalLogo);

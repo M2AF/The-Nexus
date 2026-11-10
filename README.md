@@ -134,3 +134,11 @@ Discover now has 26 categories, including Shooters. In Categories, the large til
 Free-2-Play only shows current, verified free base games. Steam’s explicit free flag, GOG’s zero regular/final prices, Epic’s zero regular price, and verified Xbox non-subscription zero-price offers establish eligibility. Demos, trials, playtests, unknown prices and temporary giveaways are excluded. Coverage remains bounded by each source; Epic remains limited to its public PC promotions feed. Steam’s batch store metadata supplies current prices, tags and hashed artwork paths for filtered results.
 
 Library has its own seven independent store/source toggles, saved locally and separate from Discover preferences. Favorites sort before other Installed/Owned entries, with the selected sort applied within each group. Recent launches remains chronological. Show all games restores store visibility as well as clearing ordinary filters.
+
+## Portal appearance
+
+Settings & library includes a Portal theme picker for the background and buttons/headers. Choose hue, saturation, brightness and opacity, enter a hex color, or sample a color with the eyedropper when available. Changes preview immediately; Save theme keeps them on this PC. Closing Settings discards unsaved previews. Reset restores the original colors. Text and neutral surfaces adapt to the selected colors. Logo color and animation remain independent.
+
+The window has no separate title bar, title text or corner logo. Drag the empty area of the existing top header to move it, or double-click there to maximize/restore. Compact fullscreen, minimize, maximize/restore and close controls remain in the header; F11 also toggles fullscreen.
+
+The top header contains one shared search bar. It searches the active Library shelf as you type (or with Search Library), and submits Discover searches with Search Stores. Each page retains its own query; Discover keeps category, section and store filters. Press / to focus the shared field. Scan library is beside Library connections.
