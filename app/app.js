@@ -1,5 +1,5 @@
 const $ = id => document.getElementById(id);
-const providers = { steam: 'Steam', xbox: 'Xbox', gog: 'GOG', epic: 'Epic Games', itch:'itch.io',wavedash:'Wavedash', custom: 'Local games' };
+const providers = { steam: 'Steam', xbox: 'Xbox', gog: 'GOG', epic: 'Epic Games', battlenet:'Battle.net',itch:'itch.io',wavedash:'Wavedash', custom: 'Local games' };
 let state = { games: [], favorites: [], history: {}, lastScan: null };
 let view = 'all', provider = 'all', query = '', shelf='installed', visibleLimit=60, selected, busy = false, toastTimer;
 let libraryStores=Object.keys(providers);
@@ -17,7 +17,7 @@ function apply(result) { if (result?.games) { state = result;libraryStores=Array
 function art(game, portrait = false) {
   const value = portrait ? game.portrait || game.header : game.header || game.portrait;
   if (/^data:image\/(jpeg|png);base64,[a-z0-9+/=]+$/i.test(value || '')) return value;
-  try { const url = new URL(value); return url.protocol === 'https:' && !url.username && !url.password && (['cdn.cloudflare.steamstatic.com','shared.fastly.steamstatic.com','images.gog.com','img.itch.zone','img.itch.io','uploads.wavedash.com'].includes(url.hostname)||/^(images|images-\d)\.gog-statics\.com$/.test(url.hostname)) ? url.href : null; } catch { return null; }
+  try { const url = new URL(value); return url.protocol === 'https:' && !url.username && !url.password && (['blz-contentstack-images.akamaized.net','bnetproduct-a.akamaihd.net','blzmedia-a.akamaihd.net','bnetcmsus-a.akamaihd.net','cdn.cloudflare.steamstatic.com','shared.fastly.steamstatic.com','images.gog.com','img.itch.zone','img.itch.io','uploads.wavedash.com'].includes(url.hostname)||/^(images|images-\d)\.gog-statics\.com$/.test(url.hostname)) ? url.href : null; } catch { return null; }
 }
 function image(game, portrait = false) {
   const src = art(game, portrait); if (!src) return null;
@@ -122,7 +122,7 @@ function card(game) {
 }
 async function launch(game) {
   if (busy) return;
-  if(!game.installed && !game.web){const result=await call('openClient',game.key);if(result?.success)toast('Opened the platform client. Availability and installation are handled there.');return;}
+  if(!game.installed && !game.web){await call('install',{libraryKey:game.key});window.NexusDownloads.open();return;}
   toast(`Starting ${game.name}…`);
   const result = await call('launch', game.key);
   if (result?.games) { apply(result); toast(`Launch request sent for ${game.name}.`); }
@@ -143,6 +143,7 @@ function details(game) {
   for (const [label, value] of [['Platform', providers[game.provider]],['Status',game.web?'Browser game':game.installed?'Installed':'Not installed'],['Library source',game.ownershipSource || 'Local installation'], ['Install size', game.web?'No local installation':game.sizeGb ? `${game.sizeGb} GB` : 'Not reported'], ['Install folder', game.web?'Runs at wavedash.com':game.installLocation || (game.installed?'Managed by the store client':'Not installed on this PC')], ['Last launched', date(state.history[game.key]?.lastLaunched)], ['Nexus launches', state.history[game.key]?.launches || 0]]) list.append(node('dt', '', label), node('dd', '', value));
   body.append(list);
   const actions = node('div', 'detail-actions'); const play = node('button', 'button primary'); play.append(icon(game.installed||game.web?'play':'download'), node('span', '', game.web?'Play in browser':game.installed?'Play now':clientLabel(game))); play.onclick = () => launch(selected); actions.append(play);
+  if(game.provider==='steam'){const achievements=node('button','button secondary','Achievements');achievements.onclick=()=>window.NexusPlatforms.achievements(game.key);actions.append(achievements);}
   const artwork = node('button','button secondary','Change artwork'); artwork.onclick = async () => { const result = await call('artwork',game.key); if (result?.games) { apply(result); details(state.games.find(g => g.key === game.key)); toast('Game artwork saved.'); } }; actions.append(artwork);
   if (game.installLocation) { const folder = node('button', 'button secondary', 'Open folder ↗'); folder.onclick = () => call('folder', game.key); actions.append(folder); }
   if (game.provider === 'custom') { const remove = node('button', 'button danger', 'Remove from library'); remove.onclick = async () => { const result = await call('remove', game.key); if (result?.games) { apply(result); $('detail').close(); toast('Removed from your library. Game files are untouched.'); } }; actions.append(remove); }
@@ -157,7 +158,7 @@ $('settings').onclick = () => $('settings-dialog').showModal();
 $('export').onclick = async () => { const result = await call('export'); if (result?.success) toast('Library exported.'); };
 $('add').onclick = async () => { const result = await call('add'); apply(result); if (result?.games) toast('Game added to your Nexus.'); };
 $('add-library-folder').onclick = async () => { const result = await call('addRoot'); apply(result); if (result?.games) await scan(); };
-function clientLabel(game){return ({steam:'Install in Steam',gog:'View in GOG',epic:'Open Epic',xbox:'Open Xbox app',itch:'Install in itch.io',wavedash:'Play in browser'})[game.provider] || 'Open client';}
+function clientLabel(game){return game.provider==='wavedash'?'Play in browser':'Install with '+(providers[game.provider]||'store');}
 function setShelf(value){shelf=value;if(value!=='web'&&provider==='wavedash')provider='all';if(value==='web'&&provider!=='wavedash')provider='all';visibleLimit=60;render();}
 for(const value of ['installed','owned','web'])$(`${value}-tab`).onclick=()=>setShelf(value);
 $('load-more').onclick=()=>{visibleLimit+=60;render();};
@@ -173,4 +174,6 @@ $('settings').replaceChildren(icon('settings-2'), node('span','','Settings & lib
 for (const id of ['grid-view','list-view']) $(id).replaceChildren(icon(id === 'grid-view' ? 'layout-grid' : 'list'));
 const portalLogo = node('img'); portalLogo.src = 'assets/logo.png'; portalLogo.alt = ''; document.querySelector('.hero-orbit').replaceChildren(portalLogo);
 document.querySelectorAll('dialog .close').forEach(button => button.replaceChildren(icon('x')));
-(async () => { apply(await call('read')); render(); if (api && (!state.lastScan || state.scanRevision !== 5)) await scan(); })();
+(async () => { apply(await call('read')); render(); if (api && !api.nativeSurface && (!state.lastScan || state.scanRevision !== 6)) await scan(); })();
+
+window.nexus.onLibraryChange?.(apply);

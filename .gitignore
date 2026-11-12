@@ -24,3 +24,9 @@ Logos/
 .DS_Store
 Thumbs.db
 squashfs-root/
+
+**/installations.json
+
+**/platform-sessions.enc*
+
+**/contacts.json

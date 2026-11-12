@@ -1,19 +1,20 @@
 {
   "name": "the-nexus-launcher",
   "productName": "The Nexus",
-  "version": "0.6.3",
+  "version": "0.9.2",
   "description": "All your installed games. One home.",
   "author": "criptoejesus",
   "private": true,
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "check": "node --check main.js && node --check preload.js && node --check app/app.js && node --check app/controller.js && node --check lib/catalog.js && node --check lib/indie-platforms.js && node --check lib/scanners.js && node --check lib/launch.js && node --check lib/artwork.js && node --check lib/scan-worker.js && node --check lib/chainlens-client.js && node --check app/social.js && node --check app/profile-media.js && node --check lib/discover.js && node --check app/discover.js && node --check lib/appearance.js && node --check app/appearance.js && node --check lib/window-settings.js && node --check app/window.js && node --check lib/store-opening.js && node --check lib/epic-discover.js && node --check app/rich-description.js && node --check lib/library-preferences.js && node --check scripts/smoke-packaged.cjs && node --check scripts/verify-artifact.cjs && node --check app/theme.js && node --check app/theme-colors.js && node --check app/search.js",
+    "check": "node --check main.js && node --check preload.js && node --check app/app.js && node --check app/controller.js && node --check lib/catalog.js && node --check lib/battlenet.js && node --check scripts/smoke-battlenet.cjs && node --check lib/indie-platforms.js && node --check lib/scanners.js && node --check lib/launch.js && node --check lib/artwork.js && node --check lib/scan-worker.js && node --check lib/chainlens-client.js && node --check app/social.js && node --check app/profile-media.js && node --check lib/discover.js && node --check app/discover.js && node --check lib/appearance.js && node --check app/appearance.js && node --check lib/window-settings.js && node --check app/window.js && node --check lib/store-opening.js && node --check lib/epic-discover.js && node --check app/rich-description.js && node --check lib/library-preferences.js && node --check scripts/smoke-packaged.cjs && node --check scripts/verify-artifact.cjs && node --check app/theme.js && node --check app/theme-colors.js && node --check app/search.js && node --check lib/installations.js && node --check lib/platform-session-store.js && node --check lib/steam-social.js && node --check lib/steam-desktop-social.js && node --check lib/steam-local-reader.js && node --check lib/discord-native.js && node --check lib/discord-worker.js && node --check lib/discord-connector.js && node --check app/downloads.js && node --check app/platforms.js && node --check lib/contacts.js && node --check app/contact-groups.js && node --check scripts/smoke-platforms.cjs && node --check app/accounts.js && node --check lib/account-social.js && node --check app/invitations.js && node --check lib/running-games.js && node --check lib/steam-local.js && node --check lib/steam-local-chat.js && node --check lib/steam-local-worker.js && node --check lib/steam-local-reader.js && node --check lib/desktop-lifecycle.js && node --check app/overlay.js && node --check app/same-game.js && node --check lib/native-overlay.js && node --check app/native-overlay.js && node --check scripts/smoke-native-overlay.cjs && node --check scripts/native-overlay-ui-fixture.cjs && node --check scripts/smoke-native-ui.cjs",
     "test": "node --test test/*.test.js",
     "build:win": "electron-builder --win portable --x64 --publish never",
     "build:linux": "electron-builder --linux AppImage --x64 --publish never",
     "smoke:packaged": "node scripts/smoke-packaged.cjs",
-    "verify:artifact": "node scripts/verify-artifact.cjs"
+    "verify:artifact": "node scripts/verify-artifact.cjs",
+    "smoke:platforms": "node scripts/smoke-platforms.cjs"
   },
   "devDependencies": {
     "electron": "45.2.3",
@@ -55,11 +56,31 @@
       "icon": "app/assets/icon.png",
       "artifactName": "The-Nexus-${version}-linux-${arch}.${ext}"
     },
-    "publish": null
+    "publish": null,
+    "extraResources": [
+      {
+        "from": "native/discord",
+        "to": "discord"
+      }
+    ],
+    "asarUnpack": [
+      "node_modules/koffi/**"
+    ]
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/M2AF/The-Nexus.git"
   },
-  "homepage": "https://github.com/M2AF/The-Nexus"
+  "homepage": "https://github.com/M2AF/The-Nexus",
+  "dependencies": {
+    "fast-xml-parser": "5.12.0",
+    "koffi": "3.3.7",
+    "qrcode": "1.5.4",
+    "steam-session": "1.9.4",
+    "steam-user": "5.3.0"
+  },
+  "overrides": {
+    "adm-zip": "0.6.1",
+    "protobufjs": "7.6.5"
+  }
 }

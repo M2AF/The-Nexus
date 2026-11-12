@@ -1,0 +1,233 @@
+{
+  "source": "https://www.blizzard.com/en-us/games/",
+  "checkedAt": "2026-11-12",
+  "products": [
+    {
+      "id": "wow",
+      "code": "WoW",
+      "title": "World of Warcraft",
+      "slug": "world-of-warcraft",
+      "home": "https://worldofwarcraft.blizzard.com/",
+      "portrait": "https://blz-contentstack-images.akamaized.net/v3/assets/blta8f9a8e092360c6c/blt5b9630b991abc743/6939c64f5a1d2c822390a263/WoW_GameCard.png",
+      "logo": "https://blz-contentstack-images.akamaized.net/v3/assets/blta8f9a8e092360c6c/blt83481be830451a94/61a6a97b0df21d7804454dbe/wow-logo.png",
+      "genres": [
+        "MMORPG"
+      ],
+      "freeToPlay": false,
+      "executables": [
+        "Wow.exe",
+        "_retail_/Wow.exe"
+      ]
+    },
+    {
+      "id": "fenris",
+      "code": "Fen",
+      "title": "Diablo IV",
+      "slug": "diablo-iv",
+      "home": "https://diablo4.blizzard.com",
+      "portrait": "https://blz-contentstack-images.akamaized.net/v3/assets/blta8f9a8e092360c6c/blt188b25fde1f3b862/646e956fd2eeef10c769e6dc/diablo4.jpg",
+      "logo": "https://blz-contentstack-images.akamaized.net/v3/assets/blta8f9a8e092360c6c/bltdcabbc90bb16cf43/646e9589e089ea11086af575/diablo4-logo.png",
+      "genres": [
+        "Action RPG",
+        "Role-playing",
+        "Fantasy"
+      ],
+      "freeToPlay": false,
+      "executables": [
+        "Diablo IV.exe"
+      ]
+    },
+    {
+      "id": "prometheus",
+      "code": "Pro",
+      "title": "Overwatch",
+      "slug": "overwatch",
+      "home": "https://overwatch.blizzard.com/",
+      "portrait": "https://blz-contentstack-images.akamaized.net/v3/assets/blta8f9a8e092360c6c/bltdf9dd58b1d2893d5/6ac5243232e6024d7dc0e46c/blizz_ow_nologo.png",
+      "logo": "https://blz-contentstack-images.akamaized.net/v3/assets/blta8f9a8e092360c6c/blt356e8885177e1b70/69839b1b9fc491040b9a15f9/logo_ow_enUS.png",
+      "genres": [
+        "Team-Based Action",
+        "Shooter",
+        "Multiplayer"
+      ],
+      "freeToPlay": true,
+      "executables": [
+        "Overwatch.exe",
+        "_retail_/Overwatch.exe"
+      ]
+    },
+    {
+      "id": "hs_beta",
+      "code": "WTCG",
+      "title": "Hearthstone",
+      "slug": "hearthstone",
+      "home": "https://hearthstone.blizzard.com/",
+      "portrait": "https://blz-contentstack-images.akamaized.net/v3/assets/blta8f9a8e092360c6c/blt56c77a9b628a7069/6aa5ae20dee88453efcbaccd/blizz_hs_nologo.png",
+      "logo": "https://blz-contentstack-images.akamaized.net/v3/assets/blta8f9a8e092360c6c/blt603b9cf848efccaa/6227958ba6bb9250d3e44f9f/hearthstone-logo.png",
+      "genres": [
+        "Strategy Card Game"
+      ],
+      "freeToPlay": true,
+      "executables": [
+        "Hearthstone.exe"
+      ]
+    },
+    {
+      "id": "anbs",
+      "code": "ANBS",
+      "title": "Diablo Immortal",
+      "slug": "diablo-immortal",
+      "home": "https://diabloimmortal.blizzard.com/",
+      "portrait": "https://blz-contentstack-images.akamaized.net/v3/assets/blta8f9a8e092360c6c/blt14732d868dcaaebd/6287cff46eb6de7d054a58c8/diablo-immortal.jpg",
+      "logo": "https://blz-contentstack-images.akamaized.net/v3/assets/blta8f9a8e092360c6c/blt337ca2914b0db3a6/6287d00854eada112e74b40b/diablo-immortal-logo.png",
+      "genres": [
+        "Action RPG",
+        "Role-playing",
+        "Fantasy"
+      ],
+      "freeToPlay": true,
+      "executables": [
+        "DiabloImmortal.exe",
+        "Engine/Binaries/Win64/DiabloImmortal.exe"
+      ]
+    },
+    {
+      "id": "osi",
+      "code": "OSI",
+      "title": "Diablo II: Resurrected",
+      "slug": "diablo-ii-resurrected",
+      "home": "https://diablo2.blizzard.com",
+      "portrait": "https://blz-contentstack-images.akamaized.net/v3/assets/blta8f9a8e092360c6c/blt1298059569c9a31a/698cfb78a6d2354acbbbabd0/blizzard_game_card_background_garden.webp",
+      "logo": "https://blz-contentstack-images.akamaized.net/v3/assets/blta8f9a8e092360c6c/blt4fdf5335bd7b436c/698cfb0f018a2885bc1fb7fa/blizzard_game_card_logo_garden_enus.webp",
+      "genres": [
+        "Action RPG",
+        "Role-playing",
+        "Fantasy"
+      ],
+      "freeToPlay": false,
+      "executables": [
+        "D2R.exe"
+      ]
+    },
+    {
+      "id": "diablo3",
+      "code": "D3",
+      "title": "Diablo III",
+      "slug": "diablo-iii",
+      "home": "https://diablo3.com/",
+      "portrait": "https://blz-contentstack-images.akamaized.net/v3/assets/blta8f9a8e092360c6c/blt1315e30958e75426/61a50f460df21d7804454d88/diablo3.jpg",
+      "logo": "https://blz-contentstack-images.akamaized.net/v3/assets/blta8f9a8e092360c6c/blta812d3f5cffc4d45/61a50f493d781a1034046a41/diablo3-logo.png",
+      "genres": [
+        "Action RPG",
+        "Role-playing",
+        "Fantasy"
+      ],
+      "freeToPlay": false,
+      "executables": [
+        "Diablo III.exe",
+        "x64/Diablo III64.exe"
+      ]
+    },
+    {
+      "id": "w3",
+      "code": "W3",
+      "title": "Warcraft III: Reforged",
+      "slug": "warcraft-iii-reforged",
+      "home": "https://warcraft3.blizzard.com/",
+      "portrait": "https://blz-contentstack-images.akamaized.net/v3/assets/blta8f9a8e092360c6c/blt4fa9fad9bfea6020/6aa5a932dee8842e5ccbacc7/blizz_w3r_nologo.png",
+      "logo": "https://blz-contentstack-images.akamaized.net/v3/assets/blta8f9a8e092360c6c/blt2b89eb70e1c846e1/6aa45bfa55641d1750f3574e/logo_w3r_enUS.png",
+      "genres": [
+        "Real-Time Strategy"
+      ],
+      "freeToPlay": false,
+      "executables": [
+        "_retail_/x86_64/Warcraft III.exe",
+        "x86_64/Warcraft III.exe"
+      ]
+    },
+    {
+      "id": "w1r",
+      "code": "W1R",
+      "title": "Warcraft I: Remastered",
+      "slug": "warcraft-1-remastered",
+      "home": "https://shop.battle.net/product/warcraft-1-remastered",
+      "portrait": "https://blz-contentstack-images.akamaized.net/v3/assets/blta8f9a8e092360c6c/bltef23deacbfc70dd3/671fd0f27c61fd5321468778/blizzard_game_card_background_wr.jpg",
+      "logo": "https://blz-contentstack-images.akamaized.net/v3/assets/blta8f9a8e092360c6c/blt3fa8aaa0ba66f978/671fcc4bd3be08e5eb8e0ea9/blizzard_game_card_logo_wr.png",
+      "genres": [
+        "Real-Time Strategy"
+      ],
+      "freeToPlay": false,
+      "executables": [
+        "Warcraft.exe"
+      ]
+    },
+    {
+      "id": "w2r",
+      "code": "W2R",
+      "title": "Warcraft II: Remastered",
+      "slug": "warcraft-2-remastered",
+      "home": "https://shop.battle.net/product/warcraft-2-remastered",
+      "portrait": "https://blz-contentstack-images.akamaized.net/v3/assets/blta8f9a8e092360c6c/blt8d825cfe40ef2d21/671fd10ad32591ddef9e7606/blizzard_game_card_background_w2r.jpg",
+      "logo": "https://blz-contentstack-images.akamaized.net/v3/assets/blta8f9a8e092360c6c/blt0a3e78d9d89e082e/671fcff95b3e2d7d64e5fa5b/blizzard_game_card_logo_w2r.png",
+      "genres": [
+        "Real-Time Strategy"
+      ],
+      "freeToPlay": false,
+      "executables": [
+        "Warcraft II.exe"
+      ]
+    },
+    {
+      "id": "s1",
+      "code": "S1",
+      "title": "StarCraft: Remastered",
+      "slug": "starcraft-remastered",
+      "home": "https://starcraft.blizzard.com/",
+      "portrait": "https://blz-contentstack-images.akamaized.net/v3/assets/blta8f9a8e092360c6c/blte81fae3d9d76ebe8/61a50ff62e73ff101cdc1c8f/starcraft-remastered.jpg",
+      "logo": "https://blz-contentstack-images.akamaized.net/v3/assets/blta8f9a8e092360c6c/blt09182b9d436fa757/61a510005cc2951022f367b0/starcraft-remastered-logo.png",
+      "genres": [
+        "Real-Time Strategy"
+      ],
+      "freeToPlay": false,
+      "executables": [
+        "x86/StarCraft.exe",
+        "StarCraft.exe",
+        "x86_64/StarCraft.exe"
+      ]
+    },
+    {
+      "id": "s2",
+      "code": "S2",
+      "title": "StarCraft II",
+      "slug": "starcraft-ii",
+      "home": "https://starcraft2.blizzard.com/",
+      "portrait": "https://blz-contentstack-images.akamaized.net/v3/assets/blta8f9a8e092360c6c/blt3873027b9450f357/61a50f033c4e21100a80f1fc/starcraft2.jpg",
+      "logo": "https://blz-contentstack-images.akamaized.net/v3/assets/blta8f9a8e092360c6c/bltcc2433ae5cec2aa4/61a50f08628d9155190ceaee/starcraft2-logo.png",
+      "genres": [
+        "Real-Time Strategy"
+      ],
+      "freeToPlay": true,
+      "executables": [
+        "StarCraft II.exe"
+      ]
+    },
+    {
+      "id": "heroes",
+      "code": "Hero",
+      "title": "Heroes of the Storm",
+      "slug": "heroes-of-the-storm",
+      "home": "https://heroesofthestorm.blizzard.com/",
+      "portrait": "https://blz-contentstack-images.akamaized.net/v3/assets/blta8f9a8e092360c6c/blt2bde13d3d83cc207/6aa45af09b942e3f91f74572/blizz_hots_nologo.png",
+      "logo": "https://blz-contentstack-images.akamaized.net/v3/assets/blta8f9a8e092360c6c/bltf838841f67259808/61a50fcb3d781a1034046a43/heroes-logo.png",
+      "genres": [
+        "MOBA",
+        "Strategy",
+        "Multiplayer"
+      ],
+      "freeToPlay": true,
+      "executables": [
+        "Heroes of the Storm.exe"
+      ]
+    }
+  ]
+}
