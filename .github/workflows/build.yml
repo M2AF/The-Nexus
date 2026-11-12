@@ -47,7 +47,8 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends libasound2t64 libgtk-3-0t64 libnss3 libgbm1 xvfb
+          sudo apt-get install -y --no-install-recommends libasound2t64 libgtk-3-0t64 libnss3 libgbm1 libpulse0 libatomic1 xvfb
+          ldd native/discord/linux-x64/libdiscord_partner_sdk.so
       - run: npm ci
       - name: Install verified Electron runtime
         shell: bash
