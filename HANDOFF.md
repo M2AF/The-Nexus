@@ -2,13 +2,13 @@
 <!-- handoff v1. LIVE STATE ONLY: rewrite in place, keep under ~60 lines.
      History goes in HANDOFF_LOG.md. Machine fields above the first ## are managed by handoff.py. -->
 
-owner: claude
-task: Restore native overlay feature; handoff/docs committed
-lease_until: 2026-11-14T20:41-04:00
+owner: none
+task: -
+lease_until: -
 repo: .
 verify: npm run check && npm test
 verified: b7f6c31 · npm run check && npm test (96/97) · 2026-11-14T17:41-04:00
-head: b7f6c31 (restore/native-overlay) clean
+head: a683d91 (restore/native-overlay) clean
 updated: 2026-11-14T17:41-04:00 · claude
 
 resources: -
@@ -20,7 +20,7 @@ resources: -
 - Native path is dev-only (NEXUS_NATIVE_OVERLAY=1), not packaged/enabled; not runtime-validated on current source; no live game attached.
 
 ## Next
-- Decide merge of restore/native-overlay; rerun isolated fixtures before any live-game test
+- User decides merge into feature/updates-and-trailers/main; rerun isolated fixtures before any live-game test.
 
 ## Traps
 - COMMIT WIP even half-finished: the whole native/overlay source was lost on 2026-11-14 because it was left untracked and another agent's branch/clean removed it. Never leave feature work untracked.
