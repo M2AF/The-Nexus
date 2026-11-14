@@ -30,3 +30,7 @@ squashfs-root/
 **/platform-sessions.enc*
 
 **/contacts.json
+
+# Native overlay build artifacts (reproducible from native/overlay source)
+native/overlay/NexusOverlay.dll
+native/overlay/*.dll
