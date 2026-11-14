@@ -26,6 +26,7 @@ const {DiscordConnector}=require('./lib/discord-connector');
 const {AccountSocial}=require('./lib/account-social');
 const {DesktopLifecycle,desktopPreferences}=require('./lib/desktop-lifecycle');
 const {NativeOverlay}=require('./lib/native-overlay');
+const {Updater,installTarget}=require('./lib/updater');
 app.setName('The Nexus');
 if (process.env.NEXUS_TEST_DATA) app.setPath('userData', process.env.NEXUS_TEST_DATA);
 const primaryInstance=app.requestSingleInstanceLock();if(!primaryInstance)app.quit();
@@ -122,6 +123,23 @@ if(primaryInstance)app.whenReady().then(() => {
   win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   win.webContents.on('will-navigate', event => event.preventDefault());
   win.webContents.session.setPermissionRequestHandler((_contents, _permission, callback) => callback(false));
+  // YouTube refuses embeds from file:// pages that send no referrer (player error 153).
+  win.webContents.session.webRequest.onBeforeSendHeaders({urls:['https://www.youtube-nocookie.com/embed/*']},(details,callback)=>{if(!details.requestHeaders.Referer)details.requestHeaders.Referer='https://www.youtube-nocookie.com/';callback({requestHeaders:details.requestHeaders});});
+  const updates=new Updater({currentVersion:app.getVersion(),platform:process.platform,target:installTarget({packaged:app.isPackaged,platform:process.platform,env:process.env}),onChange:status=>{if(!win.isDestroyed())win.webContents.send('updates:changed',status);}});
+  handle('updates:state',()=>updates.public());
+  handle('updates:check',()=>updates.check({manual:true}));
+  handle('updates:install',async()=>{
+    const plan=updates.install();
+    if(plan.action==='open'){await shell.openExternal(plan.url);return updates.public();}
+    // Release the lock first so the new instance does not hand itself back to this one.
+    app.releaseSingleInstanceLock();
+    try{await new Promise((resolve,reject)=>{const child=spawn(plan.file,[],{cwd:path.dirname(plan.file),env:plan.env,detached:true,stdio:'ignore',shell:false});child.once('error',reject);child.once('spawn',()=>{child.unref();resolve();});});}
+    catch(error){app.requestSingleInstanceLock();updates.relaunchFailed(error);return updates.public();}
+    setTimeout(()=>{if(desktop)desktop.quit();else app.quit();},250);
+    return updates.public();
+  });
+  if(!process.env.NEXUS_TEST_DATA)updates.start();
+  app.once('before-quit',()=>updates.stop());
   state.logoAnimated=typeof state.logoAnimated==='boolean'?state.logoAnimated:state.logoVariant==='animated';
   state.logoVariant=Object.hasOwn(LOGOS,state.logoVariant)?state.logoVariant:'blue';
   const updateLogoIcon=()=>{const file=path.join(__dirname,'app/assets',LOGOS[state.logoVariant].file);if(fs.existsSync(file)){win.setIcon(file);desktop?.updateIcon(file);}};updateLogoIcon();
@@ -144,6 +162,7 @@ if(primaryInstance)app.whenReady().then(() => {
   handle('discover:browse',options=>discover.browse(options));
   handle('discover:details',(key,region)=>discover.details(key,region));
   handle('discover:preview',(key,region)=>discover.preview(key,region));
+  handle('discover:media',(key,region)=>discover.media(key,region));
   handle('discover:preferences',value=>value?discover.setPreferences(value):discover.preferences);
   handle('discover:ownership',()=>mergeLibraries(state.games,[...state.ownedGames,...state.itchOwnedGames,...state.importedOwnedGames]).map(({provider,id,catalogId,name,owned,installed})=>({provider,id,catalogId,name,owned,installed})));
   handle('discover:open',async(key,provider,region)=>{

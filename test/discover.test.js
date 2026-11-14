@@ -52,3 +52,28 @@ test('Genre categories use GOG source slugs and keep matching results even witho
  const result=await c.browse({category:'rpg'});assert.equal(requested.searchParams.get('genres'),'in:rpg');assert.equal(result.games.length,1);assert.equal(result.games[0].offers[0].provider,'gog');assert.equal(result.statuses.gog.count,1);
  await assert.rejects(c.browse({region:'constructor'}));assert.throws(()=>c.setPreferences({region:'CA',stores:['constructor']}));
 });
+test('Discover keeps only trusted trailer streams and YouTube IDs, and picks matching YouTube trailers',()=>{
+ const {videoList,youtubeTrailers,videoUrl}=require('../lib/discover');
+ assert.equal(videoUrl('https://video.akamai.steamstatic.com/store_trailers/1/2/hls_264_master.m3u8?t=1'),'https://video.akamai.steamstatic.com/store_trailers/1/2/hls_264_master.m3u8?t=1');
+ assert.equal(videoUrl('https://evil.example/hls.m3u8'),null);assert.equal(videoUrl('http://video.akamai.steamstatic.com/a.m3u8'),null);assert.equal(videoUrl('https://video.akamai.steamstatic.com/a.mp4'),null);
+ const list=videoList([{kind:'hls',src:'https://video.akamai.steamstatic.com/a/hls_264_master.m3u8',title:'<b>Launch</b>',poster:'https://evil.example/x.jpg'},{kind:'youtube',id:'PZ_gex3U31U'},{kind:'youtube',id:'bad id'},{kind:'iframe',src:'https://x'}]);
+ assert.equal(list.length,2);assert.equal(list[0].title,'Launch');assert.equal(list[0].poster,null);assert.equal(list[1].poster,'https://i.ytimg.com/vi/PZ_gex3U31U/hqdefault.jpg');
+ const html=['BODY CAM | Official Trailer | Paramount Movies','Bodycam - Official Launch Trailer','Bodycam - Zombie Update Teaser Trailer','Bodycam - Official Third Trailer'].map((title,i)=>`"videoRenderer":{"videoId":"vid${i}aaaaaaa","thumbnail":{},"title":{"runs":[{"text":"${title}"}]}`).join(',');
+ assert.deepEqual(youtubeTrailers(html,'Bodycam').map(v=>v.id),['vid1aaaaaaa','vid2aaaaaaa']);
+ assert.deepEqual(youtubeTrailers(html,'Halo'),[]);
+});
+test('Discover media prefers reachable Steam trailers and falls back to YouTube when stores have none',async t=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'nexus-media-'));t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
+ const hls='https://video.akamai.steamstatic.com/store_trailers/1/2/hls_264_master.m3u8';let steamManifest=true;
+ const reply=(body,json=true)=>({status:200,ok:true,headers:{get:()=>null},text:async()=>json?JSON.stringify(body):body});
+ const fetchImpl=async url=>{
+  if(url.includes('appdetails'))return reply({'976730':{data:{type:'game',name:'Halo: The Master Chief Collection',platforms:{windows:true},movies:[{name:'Launch',hls_h264:hls,thumbnail:'https://shared.akamai.steamstatic.com/a.jpg'}]}}});
+  if(url.startsWith(hls)){if(!steamManifest)return {status:403,ok:false,headers:{get:()=>null},text:async()=>''};return reply('#EXTM3U\n',false);}
+  if(url.startsWith('https://www.youtube.com/results'))return reply('"videoRenderer":{"videoId":"PZ_gex3U31U","title":{"runs":[{"text":"Halo: The Master Chief Collection - Launch Trailer"}]}',false);
+  throw Error('unexpected '+url);
+ };
+ const catalog=new DiscoverCatalog({directory:dir,fetchImpl});const [game]=mergeOffers([{...base,provider:'steam',id:'976730'}]);catalog.index.set('CA:'+game.key,game);
+ const media=await catalog.media(game.key,'CA');assert.equal(media.source,'steam');assert.equal(media.videos[0].src,hls);
+ catalog.mediaCache.clear();catalog.previews.clear();steamManifest=false;
+ const fallback=await catalog.media(game.key,'CA');assert.equal(fallback.source,'youtube');assert.equal(fallback.videos[0].id,'PZ_gex3U31U');
+});
