@@ -61,6 +61,10 @@
       {
         "from": "native/discord",
         "to": "discord"
+      },
+      {
+        "from": "native/overlay/NexusOverlay.dll",
+        "to": "overlay/NexusOverlay.dll"
       }
     ],
     "asarUnpack": [
