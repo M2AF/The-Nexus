@@ -22,6 +22,25 @@ Earlier isolated tests passed actual D3D12 GPU readback, input routing/release a
 
 The independent native path remains behind the development-only NEXUS_NATIVE_OVERLAY switch and is not packaged or enabled by default. No native DLL is copied to the launcher resource folder for release. A signed/reviewed native build and resolution of any security classification are prerequisites for further native tests and distribution.
 
+## Anti-cheat safety (implemented) and the future OS-layer path
+
+Injection-based overlays (ours, Steam, Discord) look identical to cheats at the behavioral
+level: foreign DLL loaded into the game process, graphics and input hooked. Anti-cheat
+engines flag that pattern regardless of intent. Steam/Discord are tolerated because they
+are signed, recognized, and explicitly allow-listed by anti-cheat vendors; Xbox Game Bar
+avoids the problem entirely by drawing in the OS compositor and never entering the game
+process.
+
+- Implemented now (lib/anti-cheat.js): before attaching, Nexus detects known anti-cheat
+  (EasyAntiCheat, BattlEye, Vanguard, PunkBuster, GameGuard, XignCode, nProtect, mhyprot)
+  by marker files beside the game and by running processes, and REFUSES to inject into a
+  protected game. The injection overlay is therefore used only on non-anti-cheat games.
+- Future direction (user-chosen): a Nexus-OWNED independent OS-layer overlay that renders
+  on top without injecting into the game — Nexus's own entity, explicitly NOT an Xbox Game
+  Bar widget and not hosted by Game Bar. This is the safe path for anti-cheat games and a
+  larger, separate implementation (a Nexus compositor/overlay surface), to be built after
+  the injection overlay is solid on non-protected games.
+
 ## Sources reviewed
 
 - https://learn.microsoft.com/en-us/gaming/game-bar/overview

@@ -31,3 +31,8 @@
 - verified: npm run check + npm test (96/97); desktopPreferences nativeOverlay contract
 - Made native overlay a user opt-in: nativeOverlay desktop pref + Settings 'Use in-game overlay (beta)' toggle (shown when DLL available), startup gate honors env OR pref AND DLL-present, DLL packaged via extraResources. Off by default, restart to apply. check PASS, 96/97 tests. Commit f22aa3a. Preference contract verified by node check.
 - next: Live-game test on user-chosen non-anti-cheat game; warn about bans first
+
+### 2026-11-14T18:50-04:00 · claude · checkpoint · 9bc04ad (feature/updates-and-trailers) dirty 2
+- verified: npm run check + npm test (101/102)
+- Added anti-cheat guard (lib/anti-cheat.js): refuses native injection into anti-cheat games (file markers + process scan), before create/attach. 5 unit tests, 101/102 pass, check green. Documented future Nexus-owned OS-layer overlay (not a Game Bar widget) in GAME-OVERLAY-ARCHITECTURE.md.
+- next: Live test on a non-anti-cheat game the user picks

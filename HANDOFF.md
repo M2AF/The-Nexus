@@ -7,9 +7,9 @@ task: -
 lease_until: -
 repo: .
 verify: npm run check && npm test
-verified: f22aa3a · npm run check + npm test (96/97); desktopPreferences nativeOverlay contract · 2026-11-14T18:32-04:00
-head: f22aa3a (feature/updates-and-trailers) dirty 1
-updated: 2026-11-14T18:32-04:00 · claude
+verified: 9bc04ad · npm run check + npm test (101/102) · 2026-11-14T18:50-04:00
+head: 9bc04ad (feature/updates-and-trailers) dirty 2
+updated: 2026-11-14T18:50-04:00 · claude
 
 resources: -
 
@@ -18,10 +18,12 @@ resources: -
 - ISOLATED VALIDATION PASSES on current source (2026-11-14): scripts/smoke-native-overlay.cjs -> {gpuReadback,inputCaptured,inputReleased,stopPassThrough,reconnect}=true; scripts/smoke-native-ui.cjs -> offscreen friends UI renders in D3D12, Same game/Playing filters work, desktop window stays hidden. Defender did not interfere this run.
 - Defender developer submission 7b572675-... COMPLETED: no detection on NexusOverlay.dll (nuance: that DLL != the originally-blocked test .exe).
 - Native overlay is now a USER OPT-IN: 'nativeOverlay' desktop pref + Settings toggle "Use in-game overlay (beta)" (shown when DLL available); startup honors env OR pref AND DLL present; DLL packaged via extraResources (native/overlay/NexusOverlay.dll -> overlay/). Off by default; restart to apply. Commit f22aa3a.
-- Still NO real game attached. Injecting into an anti-cheat-protected game can get the user BANNED; live test must be on a user-chosen non-anti-cheat game.
+- ANTI-CHEAT GUARD added (lib/anti-cheat.js, commit 9bc04ad): NativeOverlay.toggle() detects anti-cheat (marker files beside game + running processes: EAC/BattlEye/Vanguard/PunkBuster/GameGuard/XignCode/nProtect/mhyprot) and REFUSES to inject into protected games, before creating shared mem or attaching. Unit-tested. Injection overlay is now for non-anti-cheat games only.
+- Still NO real game attached. Guard reduces ban risk; live test still best on a non-anti-cheat game.
+- Future (user-chosen): a Nexus-OWNED independent OS-layer overlay (its own entity, NOT a Game Bar widget) for anti-cheat games — see docs/GAME-OVERLAY-ARCHITECTURE.md.
 
 ## Next
-- Live-game test on user-chosen non-anti-cheat game; warn about bans first
+- Live test on a non-anti-cheat game the user picks
 
 ## Traps
 - COMMIT WIP even half-finished: the whole native/overlay source was lost on 2026-11-14 because it was left untracked and another agent's branch/clean removed it. Never leave feature work untracked.
