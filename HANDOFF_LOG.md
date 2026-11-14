@@ -26,3 +26,8 @@
 ### 2026-11-14T17:49-04:00 · claude · handoff · be24928 (feature/updates-and-trailers) dirty 2
 - Native overlay merged into feature/updates-and-trailers and isolated-validated on current source (both smoke fixtures pass). Remaining coverage (resize/DX11/fullscreen/IME/gamepad) needs harness expansion or approved live test.
 - next: Optional: expand fixture coverage or request approved live-game test (anti-cheat first).
+
+### 2026-11-14T18:32-04:00 · claude · checkpoint · f22aa3a (feature/updates-and-trailers) dirty 1
+- verified: npm run check + npm test (96/97); desktopPreferences nativeOverlay contract
+- Made native overlay a user opt-in: nativeOverlay desktop pref + Settings 'Use in-game overlay (beta)' toggle (shown when DLL available), startup gate honors env OR pref AND DLL-present, DLL packaged via extraResources. Off by default, restart to apply. check PASS, 96/97 tests. Commit f22aa3a. Preference contract verified by node check.
+- next: Live-game test on user-chosen non-anti-cheat game; warn about bans first
