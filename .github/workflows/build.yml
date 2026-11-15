@@ -60,6 +60,13 @@ jobs:
           exit 1
       - run: npm run check
       - run: npm test
+      - name: Build native overlay DLL from source
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          cmake -S native/overlay -B output/native-overlay-build -A x64
+          cmake --build output/native-overlay-build --target NexusOverlay --config Release
+          Copy-Item output/native-overlay-build/Release/NexusOverlay.dll native/overlay/NexusOverlay.dll
       - name: Package application
         shell: bash
         run: |

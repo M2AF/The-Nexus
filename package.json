@@ -1,7 +1,7 @@
 {
   "name": "the-nexus-launcher",
   "productName": "The Nexus",
-  "version": "0.9.6",
+  "version": "0.9.7",
   "description": "All your installed games. One home.",
   "author": "criptoejesus",
   "private": true,
@@ -38,7 +38,13 @@
     "win": {
       "target": "portable",
       "icon": "app/assets/icon.ico",
-      "signExecutable": false
+      "signExecutable": false,
+      "extraResources": [
+        {
+          "from": "native/overlay/NexusOverlay.dll",
+          "to": "overlay/NexusOverlay.dll"
+        }
+      ]
     },
     "artifactName": "The-Nexus-${version}-portable.${ext}",
     "compression": "normal",
@@ -61,10 +67,6 @@
       {
         "from": "native/discord",
         "to": "discord"
-      },
-      {
-        "from": "native/overlay/NexusOverlay.dll",
-        "to": "overlay/NexusOverlay.dll"
       }
     ],
     "asarUnpack": [
