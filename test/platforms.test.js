@@ -58,3 +58,4 @@ test('Steam chat discards a history response after disconnect or account change'
  const request=f.social.messages(f.id);f.social.disconnect();finish({messages:[{sender:f.id,message:'Stale',server_timestamp:new Date()}]});
  await assert.rejects(request,/Connect Steam|account changed/);
 });
+test('Saved contact groups still join loaded accounts when the sorted-first provider is disconnected',()=>{const accounts=[{provider:'discord',id:'2'},{provider:'steam',id:'1'}],saved=[['chainlens:offline','discord:2','steam:1','xbox:offline']];assert.equal(contactGroups(accounts,saved).length,1);assert.equal(contactGroups(accounts.slice(0,1),saved).length,1);});

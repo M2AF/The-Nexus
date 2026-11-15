@@ -9,7 +9,8 @@ function contactGroups(accounts,groups=[],verifiedLinks=[],separated=[]){
  const people=new Map(accounts.map(account=>[reference(account.provider+':'+account.id),account])),parent=new Map([...people.keys()].map(key=>[key,key]));
  const root=key=>{let value=key;while(parent.get(value)!==value)value=parent.get(value);return value;};
  const join=(a,b)=>{if(people.has(a)&&people.has(b))parent.set(root(b),root(a));};
- for(const group of groups)for(const member of group.slice(1))join(group[0],member);
+ // Anchor on the first member that is actually loaded, so a disconnected provider in a saved group doesn't break the whole merge.
+ for(const group of groups){const present=group.filter(member=>people.has(member));for(const member of present.slice(1))join(present[0],member);}
  // Only adapters may supply these edges, after verifying stable platform IDs.
  for(const link of verifiedLinks)if(link.verified===true&&!splits.has(link.from)&&!splits.has(link.to))join(link.from,link.to);
  const result=new Map();for(const [key,account]of people){const group=root(key);if(!result.has(group))result.set(group,[]);result.get(group).push(account);}
