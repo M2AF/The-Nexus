@@ -30,10 +30,15 @@ const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypt
   const source=fs.readFileSync(path.join(root,'native/discord',relative)),packaged=fs.readFileSync(path.join(resources,'discord',relative));
   if(!source.equals(packaged))throw Error('Discord SDK resource mismatch: '+relative);
  }
- const expected=process.platform==='win32'?`The-Nexus-${version}-portable.exe`:`The-Nexus-${version}-linux-x86_64.AppImage`;
- const file=path.join(directory,expected);if(!fs.existsSync(file))throw Error('Build artifact is missing: '+expected);
- const hash=crypto.createHash('sha256');for await(const chunk of fs.createReadStream(file))hash.update(chunk);
- const sha256=hash.digest('hex');fs.writeFileSync(file+'.sha256',`${sha256}  ${expected}\n`);
- fs.writeFileSync(path.join(directory,`build-info-${process.platform}.json`),JSON.stringify({version,platform:process.platform,arch:process.arch,commit:process.env.GITHUB_SHA||null,packagedFiles:entries.length,personalDataIncluded:false,artifact:expected,sha256},null,2));
- console.log('Verified package allowlist and generated SHA-256 for '+expected);
+ // Windows ships the portable executable and the per-user installer, both built from the
+ // verified unpacked folder above. The updater requires a .sha256 asset for each.
+ const expected=process.platform==='win32'?[`The-Nexus-${version}-portable.exe`,`The-Nexus-${version}-setup.exe`]:[`The-Nexus-${version}-linux-x86_64.AppImage`];
+ const artifacts=[];
+ for(const name of expected){
+  const file=path.join(directory,name);if(!fs.existsSync(file))throw Error('Build artifact is missing: '+name);
+  const hash=crypto.createHash('sha256');for await(const chunk of fs.createReadStream(file))hash.update(chunk);
+  const sha256=hash.digest('hex');fs.writeFileSync(file+'.sha256',`${sha256}  ${name}\n`);artifacts.push({artifact:name,size:fs.statSync(file).size,sha256});
+ }
+ fs.writeFileSync(path.join(directory,`build-info-${process.platform}.json`),JSON.stringify({version,platform:process.platform,arch:process.arch,commit:process.env.GITHUB_SHA||null,packagedFiles:entries.length,personalDataIncluded:false,artifact:artifacts[0].artifact,sha256:artifacts[0].sha256,artifacts},null,2));
+ console.log('Verified package allowlist and generated SHA-256 for '+expected.join(', '));
 })().catch(error=>{console.error(error);process.exitCode=1;});

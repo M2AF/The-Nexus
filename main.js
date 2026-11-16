@@ -153,7 +153,7 @@ if(primaryInstance)app.whenReady().then(() => {
   win.webContents.session.setPermissionRequestHandler((_contents, _permission, callback) => callback(false));
   // YouTube refuses embeds from file:// pages that send no referrer (player error 153).
   win.webContents.session.webRequest.onBeforeSendHeaders({urls:['https://www.youtube-nocookie.com/embed/*']},(details,callback)=>{if(!details.requestHeaders.Referer)details.requestHeaders.Referer='https://www.youtube-nocookie.com/';callback({requestHeaders:details.requestHeaders});});
-  const updates=new Updater({currentVersion:app.getVersion(),platform:process.platform,target:installTarget({packaged:app.isPackaged,platform:process.platform,env:process.env}),onChange:status=>{if(!win.isDestroyed())win.webContents.send('updates:changed',status);}});
+  const updates=new Updater({currentVersion:app.getVersion(),platform:process.platform,target:installTarget({packaged:app.isPackaged,platform:process.platform,env:process.env,execPath:process.execPath}),onChange:status=>{if(!win.isDestroyed())win.webContents.send('updates:changed',status);}});
   handle('updates:state',()=>updates.public());
   handle('updates:check',()=>updates.check({manual:true}));
   handle('updates:install',async()=>{
@@ -161,7 +161,7 @@ if(primaryInstance)app.whenReady().then(() => {
     if(plan.action==='open'){await shell.openExternal(plan.url);return updates.public();}
     // Release the lock first so the new instance does not hand itself back to this one.
     app.releaseSingleInstanceLock();
-    try{await new Promise((resolve,reject)=>{const child=spawn(plan.file,[],{cwd:path.dirname(plan.file),env:plan.env,detached:true,stdio:'ignore',shell:false});child.once('error',reject);child.once('spawn',()=>{child.unref();resolve();});});}
+    try{await new Promise((resolve,reject)=>{const child=spawn(plan.file,plan.args||[],{cwd:path.dirname(plan.file),env:plan.env,detached:true,stdio:'ignore',shell:false});child.once('error',reject);child.once('spawn',()=>{child.unref();resolve();});});}
     catch(error){app.requestSingleInstanceLock();updates.relaunchFailed(error);return updates.public();}
     setTimeout(()=>{if(desktop)desktop.quit();else app.quit();},250);
     return updates.public();

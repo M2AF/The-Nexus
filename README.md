@@ -6,17 +6,20 @@ A standalone game launcher for Windows and Linux, adapted from DesktopX.
 
 GitHub Actions builds are available from [Desktop builds](https://github.com/M2AF/The-Nexus/actions/workflows/build.yml). Open a successful run and download the Windows or Linux artifact. The repository is private, so downloading from GitHub requires repository access; a downloaded executable/AppImage can be shared separately.
 
-- Windows x64: extract the artifact ZIP and open `The-Nexus-<version>-portable.exe`.
+- Windows x64 comes in two forms; pick one:
+  - **Installer** `The-Nexus-<version>-setup.exe`: installs for the current user only (no administrator prompt) into `%LOCALAPPDATA%\Programs`, adds Start menu and desktop shortcuts, and appears in Windows' installed apps for uninstalling. It starts faster because nothing is unpacked at launch.
+  - **Portable** `The-Nexus-<version>-portable.exe`: a single file that runs from any folder without installing. It unpacks itself to a temporary folder on every launch, so it starts more slowly.
+  - Both use the same data in `%APPDATA%\The Nexus`, so you can switch between them. Each updates itself from GitHub releases in its own form: the installer downloads the newer setup (SHA-256 verified) and reinstalls silently; the portable build replaces its own file.
 - Linux x64: extract the artifact ZIP, mark `The-Nexus-<version>-linux-x64.AppImage` executable (`chmod +x`), then run it. If the system cannot mount AppImages using FUSE, run with `APPIMAGE_EXTRACT_AND_RUN=1`.
 - Quit an older Nexus from its tray menu before starting an updated build. Personal libraries, preferences and sessions are stored outside the executable in Electron's per-user app data directory.
 
 ## Development and automated builds
 
-Use Node.js 24, then run `npm ci`, `npm run check`, `npm test`, and `npm start`. Package on the matching OS with `npm run build:win` or `npm run build:linux`. Windows produces a portable EXE; Linux produces an AppImage. No signing certificates or store/account secrets are required for these unsigned builds.
+Use Node.js 24, then run `npm ci`, `npm run check`, `npm test`, and `npm start`. Package on the matching OS with `npm run build:win` or `npm run build:linux`. Windows produces a portable EXE and a per-user NSIS installer (`-setup.exe`); Linux produces an AppImage. No signing certificates or store/account secrets are required for these unsigned builds.
 
-The pinned GitHub Actions workflow runs on pushes to `main`, pull requests, version tags, and manual dispatch. Both OS jobs run static checks, unit tests, package verification, SHA-256 generation and an isolated packaged UI/IPC smoke test. Linux smoke testing runs the executable extracted from the actual AppImage under Xvfb. Downloadable artifacts are retained for 14 days; smoke evidence is retained for 7 days. The Linux CI smoke test uses `--no-sandbox` only in its isolated hosted runner; the packaged app does not force that setting for users.
+The pinned GitHub Actions workflow runs on pushes to `main`, pull requests, version tags, and manual dispatch. Both OS jobs run static checks, unit tests, package verification, SHA-256 generation and an isolated packaged UI/IPC smoke test. Windows smoke testing runs the unpacked build, then silently installs the setup into a temporary folder, checks its resources match, smoke-tests the installed executable (including that it is recognised as self-updating) and uninstalls it. Linux smoke testing runs the executable extracted from the actual AppImage under Xvfb. Downloadable artifacts are retained for 14 days; smoke evidence is retained for 7 days. The Linux CI smoke test uses `--no-sandbox` only in its isolated hosted runner; the packaged app does not force that setting for users.
 
-To prepare a release, update the version in `package.json` and `package-lock.json`, commit it, and push the matching `v<version>` tag. Once both builds pass, the workflow creates a **draft** GitHub release containing both builds and checksums. Publishing the draft remains a manual action in GitHub Releases. A tag that disagrees with the package version fails validation.
+To prepare a release, update the version in `package.json` and `package-lock.json`, commit it, and push the matching `v<version>` tag. Once both builds pass, the workflow creates a **draft** GitHub release containing the Windows portable EXE, the Windows setup EXE, the Linux AppImage and a `.sha256` file for each. The in-app updater needs the matching `.sha256` asset, so keep all of them on the release. Publishing the draft remains a manual action in GitHub Releases. A tag that disagrees with the package version fails validation.
 
 Optimized runtime branding is tracked under `app/assets`. Large original Canva/logo/video exports remain local in `Logos/`; builds do not require those originals. `dist/`, `output/`, dependencies, credentials, caches, local databases and personal library files are excluded from Git. CI also verifies an allowlist of packaged files.
 
@@ -91,11 +94,11 @@ The panel supports incoming/outgoing friend requests by ChainLens ID, online sta
 
 ## Data and development
 
-Data lives in `%APPDATA%/The Nexus/library.json`; downloaded/custom artwork lives alongside it. Game-library metadata stays on this PC. ChainLens social data uses the ChainLens service when signed in. Artwork is requested from approved publisher/CDN hosts. The original logo is unchanged. The portable executable is unsigned.
+Data lives in `%APPDATA%/The Nexus/library.json`; downloaded/custom artwork lives alongside it. Game-library metadata stays on this PC. ChainLens social data uses the ChainLens service when signed in. Artwork is requested from approved publisher/CDN hosts. The original logo is unchanged. The portable executable and the installer are unsigned.
 
 - `npm run check`: JavaScript syntax validation; no TypeScript/lint tooling is configured.
 - `npm test`: discovery, launch, ownership merging/import and read-only database regressions.
-- `npm run build:win`: portable Windows x64 build.
+- `npm run build:win`: portable and per-user installer Windows x64 builds.
 
 Native filesystem/process operations stay behind narrow preload IPC. Launch requests use stored installed-game keys; ownership imports cannot supply executable paths or commands. lib/catalog.js reads/merges owned metadata, app/controller.js handles input, lib/indie-platforms.js adapts itch.io and Wavedash, and discovery runs in a worker.
 
@@ -103,7 +106,7 @@ Export is a readable metadata backup, not a complete state restore. To restore f
 
 ## Window and startup controls (0.5.1)
 
-The title bar and slim scrollbars match the dark Nexus background. Standard Windows caption controls remain available. The upper-right fullscreen button and F11 share the same fullscreen toggle. Settings & library includes an opt-in Open on startup switch, backed by Windows startup settings. Portable startup points to the original portable executable, not its extracted temporary files; keep that executable in a permanent folder. Startup is disabled in development builds.
+The title bar and slim scrollbars match the dark Nexus background. Standard Windows caption controls remain available. The upper-right fullscreen button and F11 share the same fullscreen toggle. Settings & library includes an opt-in Open on startup switch, backed by Windows startup settings. Portable startup points to the original portable executable, not its extracted temporary files; keep that executable in a permanent folder. Installed builds point startup at the installed executable. Startup is disabled in development builds.
 
 Library list view uses three compact horizontal tiles per row on wide windows, two on medium windows, and one on narrow windows. The executable icon now uses the current supplied blue/cyan logo with nine embedded icon sizes.
 

@@ -2,6 +2,8 @@
 const {_electron:electron}=require('playwright');
 const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),assert=require('node:assert/strict');
 const root=path.resolve(__dirname,'..');
+// NEXUS_SMOKE_LABEL keeps evidence from several Windows variants (unpacked, installed) apart.
+const label=process.platform+(process.env.NEXUS_SMOKE_LABEL?'-'+process.env.NEXUS_SMOKE_LABEL.replace(/[^a-z0-9-]/gi,''):'');
 let application;
 (async()=>{
  const executablePath=path.resolve(root,process.env.NEXUS_SMOKE_EXECUTABLE||(process.platform==='win32'?'dist/win-unpacked/The Nexus.exe':'dist/linux-unpacked/the-nexus'));
@@ -12,6 +14,8 @@ let application;
  const page=await application.firstWindow(),errors=[];page.on('pageerror',error=>errors.push(error.message));
  await page.getByRole('button',{name:'Nexus build verification',exact:true}).waitFor();
  assert.equal((await page.evaluate(()=>window.nexus.read())).games.length,1);
+ // An NSIS installation must be recognised as self-updating; a bare unpacked folder must not.
+ if(process.env.NEXUS_SMOKE_EXPECT_INSTALLABLE)assert.equal((await page.evaluate(()=>window.nexus.updateState())).installable,process.env.NEXUS_SMOKE_EXPECT_INSTALLABLE==='1');
  assert.equal(await page.getByRole('search').count(),1);
  assert.equal(await page.locator('#global-search-submit').textContent(),'Search Library');
  await page.locator('#search').fill('not-in-this-library');assert.equal(await page.locator('.game-title').count(),0);
@@ -31,8 +35,8 @@ let application;
  await page.locator('#list-view').click();assert(await page.locator('#games').evaluate(el=>el.classList.contains('list-mode')));
  assert.equal(await page.locator('[data-discover-group=free]').count(),1);
  fs.mkdirSync(path.join(root,'dist'),{recursive:true});
- await page.screenshot({path:path.join(root,'dist',`smoke-${process.platform}.png`)});
+ await page.screenshot({path:path.join(root,'dist',`smoke-${label}.png`)});
  assert.deepEqual(errors,[]);
- fs.writeFileSync(path.join(root,'dist',`smoke-${process.platform}.json`),JSON.stringify({platform:process.platform,version:require('../package.json').version,commit:process.env.GITHUB_SHA||null,packaged:true,ipc:true,library:true,settings:true,listMode:true,errors},null,2));
- console.log(`Packaged ${process.platform} startup, renderer, IPC and settings checks passed.`);
+ fs.writeFileSync(path.join(root,'dist',`smoke-${label}.json`),JSON.stringify({platform:process.platform,variant:process.env.NEXUS_SMOKE_LABEL||null,executable:executablePath,version:require('../package.json').version,commit:process.env.GITHUB_SHA||null,packaged:true,ipc:true,library:true,settings:true,listMode:true,errors},null,2));
+ console.log(`Packaged ${label} startup, renderer, IPC and settings checks passed.`);
 })().catch(error=>{console.error(error);process.exitCode=1;}).finally(async()=>{if(application)await application.close();});

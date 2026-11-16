@@ -13,3 +13,9 @@ test('Startup reads its own approved Windows entry even when the default Electro
  assert.equal(startupEnabled({openAtLogin:false,launchItems:[item]},target),true);
  for(const changes of [{enabled:false},{name:'Other app'},{path:'C:\\Temp\\Nexus.exe'},{scope:'machine'},{args:['other']}])assert.equal(startupEnabled({launchItems:[{...item,...changes}]},target),false);
 });
+test('Startup targets the installed executable when the build is not portable',()=>{
+ const execPath='C:\\Users\\me\\AppData\\Local\\Programs\\the-nexus-launcher\\The Nexus.exe';
+ assert.deepEqual(startupTarget({packaged:true,platform:'win32',portableExecutable:undefined,execPath}),{name:'The Nexus',path:execPath,args:[]});
+ assert.deepEqual(startupTarget({packaged:true,platform:'win32',portableExecutable:'',execPath}),{name:'The Nexus',path:execPath,args:[]});
+ assert.throws(()=>startupTarget({packaged:true,platform:'win32',execPath:'relative\\The Nexus.exe'}));
+});
