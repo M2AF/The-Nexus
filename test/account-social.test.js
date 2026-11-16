@@ -104,10 +104,10 @@ test('Xbox messages read the friend conversation, send text parts, and reject no
  const social=new AccountSocial({provider:'xbox',store:store(),now:()=>1000,fetchImpl:async(url,options)=>{calls.push({url,options});if(url.includes('peoplehub.xboxlive'))return {ok:true,json:async()=>({people:[{xuid:peer,isFriend:true,gamertag:'Friend'}]})};if(url.includes('xblmessaging'))return options.method==='POST'?{ok:true,json:async()=>({messageId:'9',conversationId:'c'})}:chat;return {ok:true,json:async()=>({profileUsers:[]})};}});
  await social.accept({provider:'xbox',accountId:xbox,token:'private-token',userHash:'123',expiresAt:100000,name:'Owner'});
  const result=await social.messages(peer),read=calls.find(call=>call.url.includes('xblmessaging'));
- assert.equal(read.url,'https://xblmessaging.xboxlive.com/network/Xbox/users/me/conversations/users/xuid('+peer+')?maxItems=50');assert.equal(read.options.method,'GET');assert.equal(read.options.headers['x-xbl-contract-version'],'1');assert.equal(read.options.headers.Authorization,'XBL3.0 x=123;private-token');
+ assert.equal(read.url,'https://xblmessaging.xboxlive.com/network/xbox/users/me/conversations/users/xuid('+peer+')?maxItems=50');assert.equal(read.options.method,'GET');assert.equal(read.options.headers['x-xbl-contract-version'],'1');assert.equal(read.options.headers.Authorization,'XBL3.0 x=123;private-token');
  assert.deepEqual(result.messages.map(m=>[m.sender,m.text]),[[peer,'hi there'],[xbox,'yo'],[peer,'[This Xbox message type is not supported in The Nexus]']]);assert.equal(result.messages[0].at,Date.parse('2026-11-16T10:00:00Z'));
  assert.deepEqual(await social.send(peer,'gg'),{success:true});const sent=calls.at(-1);
- assert.equal(sent.options.method,'POST');assert.equal(sent.url,'https://xblmessaging.xboxlive.com/network/Xbox/users/me/conversations/users/xuid('+peer+')');assert.deepEqual(JSON.parse(sent.options.body),{parts:[{contentType:'text',version:0,text:'gg'}]});
+ assert.equal(sent.options.method,'POST');assert.equal(sent.url,'https://xblmessaging.xboxlive.com/network/xbox/users/me/conversations/users/xuid('+peer+')');assert.deepEqual(JSON.parse(sent.options.body),{parts:[{contentType:'text',version:0,text:'gg'}]});
  const before=calls.length;
  await assert.rejects(social.send(peer,'x'.repeat(257)),/up to 256/);await assert.rejects(social.send(peer,'  '),/up to 256/);
  await assert.rejects(social.messages('2533274800000077'),/current Xbox friend/);await assert.rejects(social.send('2533274800000077','hi'),/current Xbox friend/);assert.equal(calls.length,before);
