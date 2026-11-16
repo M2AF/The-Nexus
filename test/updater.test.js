@@ -51,3 +51,50 @@ test('development builds report a newer release and open its page instead of dow
  const state=await updater.check();assert.equal(state.status,'available');assert.equal(state.installable,false);assert.equal(updater.download,null);
  assert.deepEqual(updater.install(),{action:'open',url:'https://github.com/M2AF/The-Nexus/releases/tag/v1.0.0'});
 });
+const setupRelease=version=>{const info=release(version),name=`The-Nexus-${version}-setup.exe`;info.assets.push({name,size:2e6,browser_download_url:`https://github.com/M2AF/The-Nexus/releases/download/v${version}/${name}`},{name:name+'.sha256',size:90,browser_download_url:`https://github.com/M2AF/The-Nexus/releases/download/v${version}/${name}.sha256`});return info;};
+test('NSIS installations are recognised by their uninstaller; unpacked folders and portable builds are not',()=>{
+ const execPath='C:\\Users\\me\\AppData\\Local\\Programs\\the-nexus-launcher\\The Nexus.exe',env={LOCALAPPDATA:'C:\\Users\\me\\AppData\\Local'},seen=[];
+ const target=installTarget({packaged:true,platform:'win32',env,execPath,exists:file=>{seen.push(file);return true;}});
+ assert.deepEqual(target,{kind:'installed',file:execPath,downloadDir:'C:\\Users\\me\\AppData\\Local\\the-nexus-updater'});
+ assert.deepEqual(seen,['C:\\Users\\me\\AppData\\Local\\Programs\\the-nexus-launcher\\Uninstall The Nexus.exe']);
+ assert.equal(installTarget({packaged:true,platform:'win32',env,execPath:'C:\\build\\win-unpacked\\The Nexus.exe',exists:()=>false}),null);
+ assert.equal(installTarget({packaged:true,platform:'win32',env:{},execPath,exists:()=>true}),null);
+ assert.equal(installTarget({packaged:false,platform:'win32',env,execPath,exists:()=>true}),null);
+ assert.equal(installTarget({packaged:true,platform:'win32',env,execPath,exists:()=>{throw Error('denied');}}),null);
+ // The portable stub also runs from a folder; its permanent executable always wins.
+ assert.equal(installTarget({packaged:true,platform:'win32',env:{...env,PORTABLE_EXECUTABLE_FILE:'C:\\Games\\The Nexus.exe'},execPath,exists:()=>true}).kind,'portable');
+});
+test('installed builds select the setup asset while portable builds keep the portable asset',()=>{
+ const info=setupRelease('1.0.0');
+ assert.equal(selectRelease(info,{currentVersion:'0.9.5',platform:'win32',kind:'installed'}).asset.name,'The-Nexus-1.0.0-setup.exe');
+ assert.equal(selectRelease(info,{currentVersion:'0.9.5',platform:'win32',kind:'portable'}).asset.name,'The-Nexus-1.0.0-portable.exe');
+ assert.equal(selectRelease(release('1.0.0'),{currentVersion:'0.9.5',platform:'win32',kind:'installed'}).asset,null);
+ const foreign=setupRelease('1.0.0');foreign.assets[2].browser_download_url='https://example.com/setup.exe';assert.equal(selectRelease(foreign,{currentVersion:'0.9.5',platform:'win32',kind:'installed'}).asset,null);
+});
+test('installed builds download and verify the setup outside the install folder, then run it silently',async t=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'nexus-update-installed-'));t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
+ const installDir=path.join(root,'Programs'),downloadDir=path.join(root,'the-nexus-updater');fs.mkdirSync(installDir);
+ const exe=path.join(installDir,'The Nexus.exe');fs.writeFileSync(exe,'installed build');const payload=crypto.randomBytes(2e6),info=setupRelease('1.0.0'),requested=[];
+ const fetchImpl=async url=>{requested.push(url);if(url===RELEASE_API)return response(200,JSON.stringify(info));if(url.endsWith('setup.exe.sha256'))return response(200,`${sha(payload)}  The-Nexus-1.0.0-setup.exe\n`);if(url.endsWith('setup.exe'))return response(200,payload);throw Error('unexpected '+url);};
+ const updater=new Updater({currentVersion:'0.9.5',platform:'win32',target:{kind:'installed',file:exe,downloadDir},fetchImpl});
+ await updater.check({manual:true});await updater.download;assert.equal(updater.public().status,'ready');
+ assert(!requested.some(url=>url.includes('portable')));
+ const setup=path.join(downloadDir,'The-Nexus-update-1.0.0-setup.exe');assert.deepEqual(fs.readFileSync(setup),payload);
+ assert.deepEqual(fs.readdirSync(installDir),['The Nexus.exe']);
+ const plan=updater.install();
+ assert.equal(plan.action,'relaunch');assert.equal(plan.file,setup);assert.deepEqual(plan.args,['/S','--updated','--force-run']);
+ assert.equal(fs.readFileSync(exe,'utf8'),'installed build');assert.equal(updater.public().status,'restarting');
+ // A setup that cannot be started leaves the verified download ready for another try.
+ updater.relaunchFailed(Error('blocked'));assert.equal(updater.public().status,'ready');assert.equal(updater.install().file,setup);
+ // The next launch removes the used setup and abandoned partial downloads.
+ fs.writeFileSync(path.join(downloadDir,'.The-Nexus-update-1.0.1.partial'),'x');fs.writeFileSync(path.join(downloadDir,'keep.txt'),'x');
+ updater.cleanup();assert.deepEqual(fs.readdirSync(downloadDir),['keep.txt']);
+});
+test('installed builds reject a setup whose checksum does not match',async t=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'nexus-update-installed-bad-'));t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
+ const downloadDir=path.join(root,'the-nexus-updater'),exe=path.join(root,'The Nexus.exe');fs.writeFileSync(exe,'installed build');
+ const fetchImpl=async url=>url===RELEASE_API?response(200,JSON.stringify(setupRelease('1.0.0'))):url.endsWith('.sha256')?response(200,`${'0'.repeat(64)}  The-Nexus-1.0.0-setup.exe`):response(200,crypto.randomBytes(2e6));
+ const updater=new Updater({currentVersion:'0.9.5',platform:'win32',target:{kind:'installed',file:exe,downloadDir},fetchImpl});
+ await updater.check();await updater.download;
+ assert.equal(updater.public().status,'error');assert.match(updater.public().message,/SHA-256/);assert.deepEqual(fs.readdirSync(downloadDir),[]);assert.throws(()=>updater.install(),/No downloaded update/);
+});

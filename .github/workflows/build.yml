@@ -84,6 +84,35 @@ jobs:
       - name: Smoke test Windows application
         if: runner.os == 'Windows'
         run: npm run smoke:packaged
+        env:
+          # The bare unpacked folder is neither portable nor installed, so it must not self-update.
+          NEXUS_SMOKE_EXPECT_INSTALLABLE: '0'
+      - name: Install and smoke test Windows installer
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $version = node -p "require('./package.json').version"
+          $setup = (Resolve-Path "dist/The-Nexus-$version-setup.exe").Path
+          $dir = Join-Path $env:RUNNER_TEMP 'NexusInstalled'
+          # Per-user silent install; /D must be the last argument and unquoted.
+          $install = Start-Process -FilePath $setup -ArgumentList '/S', "/D=$dir" -Wait -PassThru
+          if ($install.ExitCode -ne 0) { throw "Installer exited with $($install.ExitCode)" }
+          $exe = Join-Path $dir 'The Nexus.exe'
+          foreach ($file in @($exe, (Join-Path $dir 'Uninstall The Nexus.exe'))) {
+            if (-not (Test-Path $file)) { throw "Installed file is missing: $file" }
+          }
+          foreach ($relative in @('app.asar', 'overlay/NexusOverlay.dll', 'discord/win32-x64/discord_partner_sdk.dll', 'discord/License-Notices.txt')) {
+            $installed = Join-Path $dir "resources/$relative"
+            $unpacked = "dist/win-unpacked/resources/$relative"
+            if ((Get-FileHash $installed).Hash -ne (Get-FileHash $unpacked).Hash) { throw "Installed resource differs from the unpacked build: $relative" }
+          }
+          $env:NEXUS_SMOKE_EXECUTABLE = $exe
+          $env:NEXUS_SMOKE_LABEL = 'installed'
+          $env:NEXUS_SMOKE_EXPECT_INSTALLABLE = '1'
+          npm run smoke:packaged
+          if ($LASTEXITCODE -ne 0) { throw 'Installed smoke test failed' }
+          $uninstall = Start-Process -FilePath (Join-Path $dir 'Uninstall The Nexus.exe') -ArgumentList '/S' -Wait -PassThru
+          if ($uninstall.ExitCode -ne 0) { throw "Uninstaller exited with $($uninstall.ExitCode)" }
       - name: Smoke test Windows social and installation UI
         if: runner.os == 'Windows'
         shell: pwsh
@@ -105,10 +134,12 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: The-Nexus-${{ matrix.platform }}-x64
+          # Name the release files explicitly so NSIS by-products (blockmap, latest.yml) stay out.
           path: |
-            dist/*.exe
-            dist/*.AppImage
-            dist/*.sha256
+            dist/The-Nexus-*-portable.exe
+            dist/The-Nexus-*-setup.exe
+            dist/The-Nexus-*.AppImage
+            dist/The-Nexus-*.sha256
             dist/build-info-*.json
           if-no-files-found: error
           retention-days: 14
