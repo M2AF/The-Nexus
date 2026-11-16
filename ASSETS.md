@@ -35,3 +35,5 @@ SVG platform colors are adjusted for contrast. Game/platform marks identify thei
 - Inline game-description media: approved store CDN URLs in the source description (including items.gog.com). Media loads directly from its original store host; original PNG/JPEG/GIF formatting is retained. No additional artwork is packaged.
 
 - Filtered Steam Discover cards use official Steam Store Browse batch asset metadata, including current hashed capsule/header/library paths under shared.fastly.steamstatic.com/store_item_assets. Existing platform logos are reused for Library store toggles.
+
+Battle.net platform logo: Simple Icons battledotnet.svg (CC0), tinted Battle.net blue. Blizzard game images are official Blizzard CDN images referenced from https://www.blizzard.com/en-us/games/; their rights remain with their respective owners. Metadata source checked November12,2026. lib/battlenet-products.json keeps the supported PC product mappings and replaceable artwork URLs.

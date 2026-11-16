@@ -1,0 +1,15 @@
+# Battle.net integration
+
+Provider key: battlenet. User-facing name: Battle.net. It is positioned directly above itch.io in Library, as requested. Existing store selections migrate once to include the new provider; deliberate later exclusions remain saved.
+
+Discover fetches https://www.blizzard.com/en-us/games/ and parses supported PC base-game cards. lib/battlenet-products.json contains checked product/launcher mappings and official image references for13 titles. Mobile-only titles, expansions and unmatched cards do not become installable PC base-game offers. Feed coverage is explicitly limited; paid prices and sales charts are unavailable. Store pages supply final price/edition/availability. Search, category and Free-2-Play filtering work through the existing catalog; real matching titles merge with other stores. Live artwork refreshes with the six-hour feed cache.
+
+Read-only install inputs: %ProgramData%/Battle.net/Agent/product.db; Windows uninstall metadata; active .build.info entries in default/configured roots including Documents/Games. The bounded protobuf reader uses top-level repeated install field1, uid1/product-code2/settings3, settings path1. It supports the legacy single-install record as a fallback. Only known product IDs and existing known executables qualify. It never reads login/account configuration or credentials. Agent/client records, stale directories, missing binaries, and beta/PTR records are excluded. Native Linux Battle.net installation scanning/launching is not provided; Discover and owned metadata imports remain available there.
+
+A discovered Battle.net client opens the game's page with --game=<validated product>, while installed-game launching uses --exec=launch <validated product code>. Store buttons never use the launch action. Missing/broken client handoffs fall back to the official website. Registry launch/uninstall command arguments are never executed. Imported records cannot supply arbitrary commands. Owned titles may come from Galaxy or JSON; full direct account-entitlement synchronization is not implemented.
+
+Battle.net manages downloads; Nexus does not fabricate byte/progress data. Use Scan library when installation finishes to detect it. No game is installed/purchased or launched by the validation suite.
+
+Validation: test/battlenet.test.js covers malformed manifests, moved installs, missing binaries, catalog filtering, image-host validation, exact cross-store merging, client routing/fallback, import normalization and preference migration. scripts/smoke-battlenet.cjs uses an isolated library profile and the live public Blizzard page, with launch/store IPC stubbed. Screenshots are under output/battlenet. Native overlay execution remains prohibited under the separate Defender investigation.
+
+References: Blizzard's public games page and official CDN artwork; local uninstall/Agent records. Protobuf field facts and launch-argument behavior cross-checked against the independently maintained Playnite BattleNetLibrary source (MIT). The integration implementation is original and does not import its source code. Platform mark: Simple Icons battledotnet (CC0).

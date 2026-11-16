@@ -1,0 +1,13 @@
+body.game-overlay{padding:0;min-height:100dvh;overflow:hidden;background:var(--bg)}body.game-overlay>.sidebar,body.game-overlay>main{display:none}
+body.game-overlay #platform-dialog{padding:18px 22px;background:var(--bg);border:1px solid var(--line);border-radius:12px;box-sizing:border-box}
+body.game-overlay #platform-dialog::backdrop{background:transparent;backdrop-filter:none}
+body.game-overlay .platform-account-rail{display:none}body.game-overlay .platform-hub-layout{grid-template-columns:minmax(0,1fr);gap:0}
+body.game-overlay .platform-heading{gap:12px}body.game-overlay .platform-heading h2{font-size:24px}
+body.native-surface{margin:0;width:1100px;height:800px;overflow:hidden;background:transparent!important}body.native-surface>.sidebar,body.native-surface>main{display:none!important}
+body.native-surface #native-pointer{position:fixed;left:12px;top:12px;z-index:2147483647;width:0;height:0;border-left:10px solid var(--text);border-top:3px solid transparent;border-bottom:15px solid transparent;filter:drop-shadow(1px 1px 1px #000);pointer-events:none;transform:rotate(-25deg);transform-origin:0 0}
+#overlay-game-context{flex:0 0 auto;margin:12px 0 8px;font-size:12px;color:var(--panel-muted)}
+body.game-overlay #platform-dialog.has-conversation .platform-layout{grid-template-columns:240px minmax(0,1fr)}
+body.game-overlay #platform-dialog.has-conversation .platform-people{display:block}
+body.game-overlay #platform-dialog .platform-friend{min-height:60px}body.game-overlay .platform-contact-row{margin-bottom:5px}
+.desktop-controls{display:flex;flex-direction:column;align-items:flex-start;gap:12px}.desktop-controls label{display:flex;gap:9px;align-items:center;font-size:12px}.desktop-controls input{width:18px;height:18px;accent-color:var(--accent)}#desktop-status{font-size:11px;line-height:1.7}
+@media(max-width:800px){body.game-overlay #platform-dialog{padding:14px}body.game-overlay #platform-dialog.has-conversation .platform-layout{grid-template-columns:minmax(0,1fr)}body.game-overlay #platform-dialog.has-conversation .platform-people{display:none}body.game-overlay .platform-heading{flex-wrap:wrap}}

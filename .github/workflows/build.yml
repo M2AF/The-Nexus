@@ -47,7 +47,8 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends libasound2t64 libgtk-3-0t64 libnss3 libgbm1 xvfb
+          sudo apt-get install -y --no-install-recommends libasound2t64 libgtk-3-0t64 libnss3 libgbm1 libpulse0 libatomic1 xvfb
+          ldd native/discord/linux-x64/libdiscord_partner_sdk.so
       - run: npm ci
       - name: Install verified Electron runtime
         shell: bash
@@ -59,6 +60,13 @@ jobs:
           exit 1
       - run: npm run check
       - run: npm test
+      - name: Build native overlay DLL from source
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          cmake -S native/overlay -B output/native-overlay-build -A x64
+          cmake --build output/native-overlay-build --target NexusOverlay --config Release
+          Copy-Item output/native-overlay-build/Release/NexusOverlay.dll native/overlay/NexusOverlay.dll
       - name: Package application
         shell: bash
         run: |
@@ -76,6 +84,12 @@ jobs:
       - name: Smoke test Windows application
         if: runner.os == 'Windows'
         run: npm run smoke:packaged
+      - name: Smoke test Windows social and installation UI
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $env:NEXUS_PLATFORM_EXE = (Resolve-Path 'dist/win-unpacked/The Nexus.exe').Path
+          npm run smoke:platforms
       - name: Extract and smoke test Linux AppImage
         if: runner.os == 'Linux'
         shell: bash
@@ -84,6 +98,7 @@ jobs:
           "${images[0]}" --appimage-extract > /dev/null
           test -x squashfs-root/the-nexus
           xvfb-run -a npm run smoke:packaged
+          NEXUS_PLATFORM_EXE="$PWD/squashfs-root/the-nexus" xvfb-run -a npm run smoke:platforms
         env:
           NEXUS_SMOKE_EXECUTABLE: squashfs-root/the-nexus
       - name: Upload ${{ matrix.platform }} build

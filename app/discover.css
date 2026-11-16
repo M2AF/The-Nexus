@@ -5,3 +5,26 @@
 .discover-description{white-space:normal}.discover-rich-description{font-size:12px;line-height:1.8;color:#a6bacb;overflow-wrap:anywhere;margin:20px 0}.discover-rich-description p,.discover-rich-description div{margin:0 0 12px;white-space:normal}.discover-rich-description h2,.discover-rich-description h3,.discover-rich-description h4{font-size:17px!important;line-height:1.5;letter-spacing:0!important;margin:20px 0 10px!important}.discover-rich-description ul,.discover-rich-description ol{padding-left:22px;margin:12px 0}.discover-rich-description li{margin:6px 0}.discover-rich-description img{display:block;max-width:100%;width:auto;height:auto;margin:16px auto;border-radius:6px}.discover-rich-description figure{margin:16px 0}.discover-rich-description figcaption{font-size:10px;color:var(--muted)}.discover-rich-description blockquote{margin:14px 0;padding-left:14px;border-left:2px solid #42616b}.discover-rich-description>:first-child{margin-top:0!important}.discover-rich-description>:last-child{margin-bottom:0!important}#discover-detail-body>.discover-offers{margin-top:18px}#discover-detail-body>.discover-detail-image{margin-top:20px}
 
 .discover-category-filters{display:flex;flex-wrap:wrap;gap:7px;margin:18px 0 24px}.discover-category-chip{border:1px solid #304454;background:#121d29;color:#9fb5c8;border-radius:6px;padding:7px 11px;font-size:11px}.discover-category-chip:hover{border-color:#689f99;color:#e1f6ef}.discover-category-chip[aria-pressed=true],.discover-category[aria-pressed=true]{border-color:var(--accent);background-color:#214341;color:#c9fff0;box-shadow:inset 0 0 0 1px #9ae8d633}.category-results{margin-top:30px}.category-results h3{font-size:18px;margin:0}.discover-tabs{flex-wrap:wrap}.discover-tabs button{white-space:nowrap}@media(max-width:700px){.discover-category-filters{gap:6px}.discover-category-chip{padding:7px 9px;font-size:10px}}
+
+/* Header media carousel: store artwork and trailers. */
+.discover-media{position:relative;margin-top:20px}
+.discover-media-stage{position:relative;aspect-ratio:16/9;border-radius:8px;overflow:hidden;background:#05080c}
+.discover-media-slide{position:absolute;inset:0;animation:discover-media-in .35s ease}
+.discover-media-slide img{position:relative;width:100%;height:100%;object-fit:contain;display:block}
+.discover-media-slide img.discover-media-backdrop{position:absolute;inset:0;object-fit:cover;filter:blur(28px) brightness(.5) saturate(1.2);transform:scale(1.15)}
+.discover-media-slide video,.discover-media-slide iframe{width:100%;height:100%;display:block;border:0;background:#000;object-fit:contain}
+.discover-media-slide.no-image{background:#1c2e3b}
+.discover-media-arrow{position:absolute;top:calc(50% - 22px);transform:translateY(-50%);width:42px;height:64px;display:grid;place-items:center;padding:0;border:1px solid #ffffff1f;border-radius:8px;background:#05080cb8;color:#f2f6fa;cursor:pointer;opacity:.78;transition:opacity .15s ease,background .15s ease;z-index:2}
+.discover-media-arrow.previous{left:10px}.discover-media-arrow.next{right:10px}
+.discover-media-arrow svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.discover-media:hover .discover-media-arrow,.discover-media-arrow:focus-visible{opacity:1}
+.discover-media-arrow:hover{background:#0b1118f0}
+.discover-media-arrow:focus-visible,.discover-media-dot:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.discover-media-footer{display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:26px;margin-top:8px}
+.discover-media-caption{font-size:11px;color:#8ca5b7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.discover-media-dots{display:flex;gap:6px;flex-shrink:0}
+.discover-media-dot{width:22px;height:6px;padding:0;border:0;border-radius:3px;background:#ffffff30;cursor:pointer}
+.discover-media-dot[aria-current="true"]{background:var(--accent)}
+@keyframes discover-media-in{from{opacity:0}to{opacity:1}}
+@media(prefers-reduced-motion:reduce){.discover-media-slide{animation:none}.discover-media-arrow{transition:none}}
+@media(max-width:700px){.discover-media-arrow{width:34px;height:48px}.discover-media-arrow.previous{left:6px}.discover-media-arrow.next{right:6px}}

@@ -7,7 +7,7 @@ let application;
  const executablePath=path.resolve(root,process.env.NEXUS_SMOKE_EXECUTABLE||(process.platform==='win32'?'dist/win-unpacked/The Nexus.exe':'dist/linux-unpacked/the-nexus'));
  const profile=fs.mkdtempSync(path.join(os.tmpdir(),'nexus-ci-smoke-'));
  // Synthetic local data prevents library scans, account restoration and store requests.
- fs.writeFileSync(path.join(profile,'library.json'),JSON.stringify({games:[{provider:'steam',id:'1',name:'Nexus build verification'}],favorites:[],history:{},scanRevision:5,lastScan:new Date().toISOString()}));
+ fs.writeFileSync(path.join(profile,'library.json'),JSON.stringify({games:[{provider:'steam',id:'1',name:'Nexus build verification'}],favorites:[],history:{},scanRevision:6,lastScan:new Date().toISOString()}));
  application=await electron.launch({executablePath,args:process.platform==='linux'?['--no-sandbox']:[],env:{...process.env,NEXUS_TEST_DATA:profile}});
  const page=await application.firstWindow(),errors=[];page.on('pageerror',error=>errors.push(error.message));
  await page.getByRole('button',{name:'Nexus build verification',exact:true}).waitFor();
