@@ -16,6 +16,7 @@ async function call(method, ...args) {
 function apply(result) { if (result?.games) { state = result;libraryStores=Array.isArray(result.libraryStores)?result.libraryStores.filter(id=>Object.hasOwn(providers,id)):Object.keys(providers);render(); document.dispatchEvent(new Event('nexus-library-updated')); } }
 function art(game, portrait = false) {
   const value = portrait ? game.portrait || game.header : game.header || game.portrait;
+  if (/^nexus-art:\/\/img\/[a-f0-9]{32}\?v=\d+$/.test(value || '')) return value;
   if (/^data:image\/(jpeg|png);base64,[a-z0-9+/=]+$/i.test(value || '')) return value;
   try { const url = new URL(value); return url.protocol === 'https:' && !url.username && !url.password && (['blz-contentstack-images.akamaized.net','bnetproduct-a.akamaihd.net','blzmedia-a.akamaihd.net','bnetcmsus-a.akamaihd.net','cdn.cloudflare.steamstatic.com','shared.fastly.steamstatic.com','images.gog.com','img.itch.zone','img.itch.io','uploads.wavedash.com'].includes(url.hostname)||/^(images|images-\d)\.gog-statics\.com$/.test(url.hostname)) ? url.href : null; } catch { return null; }
 }
