@@ -9,6 +9,13 @@ test('owned records merge with installed games without treating every local exec
  assert.equal(games.length,4);assert.equal(games.filter(game=>game.installed).length,3);assert.equal(games.filter(game=>game.owned).length,3);
  assert.equal(games.find(game=>game.name==='Racing').key,'xbox:Package!App');assert.equal(games.find(game=>game.name==='Other Game').installed,false);assert.equal(games.find(game=>game.provider==='custom').owned,false);
 });
+test('locally cached artwork survives a merge with remote owned artwork',()=>{
+ const local='nexus-art://img/0123456789abcdef0123456789abcdef?v=1',remote='https://cdn.cloudflare.steamstatic.com/a.jpg';
+ const [game]=mergeLibraries([{provider:'steam',id:'10',name:'A Game',portrait:local,header:'data:image/jpeg;base64,AA=='}],[{provider:'steam',id:'10',name:'A Game',portrait:remote,header:remote}]);
+ assert.equal(game.portrait,local);assert.equal(game.header,'data:image/jpeg;base64,AA==');
+ const [plain]=mergeLibraries([{provider:'steam',id:'10',name:'A Game'}],[{provider:'steam',id:'10',name:'A Game',portrait:remote}]);
+ assert.equal(plain.portrait,remote);
+});
 test('imports accept Steam JSON and discard launch commands, credentials, and untrusted artwork',()=>{
  const [game]=normalizeOwnedImport({response:{games:[{appid:10,name:'A Game',launchTarget:{exe:'malware.exe'},token:'secret',portrait:'https://evil.example/tracker.jpg'}]}});
  assert.equal(game.provider,'steam');assert.equal(game.id,'10');assert.equal(game.launchTarget,undefined);assert.equal(game.token,undefined);assert.equal(game.portrait,undefined);
