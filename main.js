@@ -235,7 +235,7 @@ if(primaryInstance)app.whenReady().then(() => {
   handle('platforms:disconnect',async provider=>{const result=await platformClient(provider).disconnect();if(provider==='steam'){state.steamOwnedGames=[];state.steamAccountId=null;save();win.webContents.send('library:changed');}return result;});
   handle('platforms:messages',(provider,id)=>platformClient(provider).messages(id));
   handle('platforms:open-chat',(provider,id)=>{if(provider!=='steam')throw Error('This platform uses Nexus chat.');steamSocial.friend(id);throw Error('Choose Message to chat inside The Nexus.');});
-  handle('platforms:send',(provider,id,text)=>platformClient(provider).send(id,text));
+  handle('platforms:send',(provider,id,text)=>{if(process.env.NEXUS_XBOX_CHAT_DIAGNOSTICS==='1')console.log('Nexus chat send request',JSON.stringify({provider,friend:'…'+String(id).slice(-4)}));return platformClient(provider).send(id,text);});
   const invitationFriend=(provider,id)=>{if(!['steam','discord','xbox','epic'].includes(provider))throw Error('Unsupported invitation platform.');const account=platformClient(provider).public();if(!account.connected||!account.friends.some(friend=>friend.id===id))throw Error('Choose a current connected friend.');return account;};
   const invitationGame=gameKey=>{const game=snapshot().games.find(game=>game.key===gameKey&&game.installed&&!game.web);if(!game)throw Error('Choose an installed game.');return game;};
   const currentInvitationGame=async()=>{const installed=snapshot().games.filter(game=>game.installed&&!game.web).map(game=>({...game,launchTarget:state.games.find(record=>key(record)===game.key)?.launchTarget}));return runningGames.current(installed,state.history);};
