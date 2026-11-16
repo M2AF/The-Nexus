@@ -183,7 +183,8 @@ if(primaryInstance)app.whenReady().then(() => {
   handle('chainlens:refresh',()=>social.credential?social.refreshIdentity():social.public());
   handle('chainlens:call',(action,args)=>social.action(action,args));
   handle('chainlens:profile',async()=>{await shell.openExternal(CHAINLENS_ORIGIN+'/nexus-account.html');return {success:true};});
-  social.restore().catch(()=>{});
+  // Xbox/Epic renewal goes through ChainLens, so it waits for the saved ChainLens sign-in.
+  const socialRestored=social.restore().catch(()=>{});
   handle('library:read', snapshot);
   handle('library:stores',value=>{if(value!==undefined){state.libraryStores=libraryStores(value);save();}let stores;try{stores=libraryStores(state.libraryStores);}catch{stores=[...LIBRARY_STORES];}return {stores};});
   const discover=new DiscoverCatalog({directory:app.getPath('userData')});
@@ -223,8 +224,9 @@ if(primaryInstance)app.whenReady().then(() => {
     onLibrary:(games,accountId)=>{state.steamOwnedGames=games;state.steamAccountId=accountId;save();if(!win.isDestroyed())win.webContents.send('library:changed');}
   });
   discordSocial=new DiscordConnector({utilityProcess,store:platformStore,resources:app.isPackaged?process.resourcesPath:path.join(__dirname,'native'),onChange:platformChanged});
-  xboxSocial=new AccountSocial({provider:'xbox',store:platformStore,onChange:platformChanged});
-  epicSocial=new AccountSocial({provider:'epic',store:platformStore,onChange:platformChanged});
+  const renewPlatform=async({provider,accountId,refreshToken})=>{await socialRestored;return social.renewIdentitySession(provider,{accountId,refreshToken});};
+  xboxSocial=new AccountSocial({provider:'xbox',store:platformStore,onChange:platformChanged,renew:renewPlatform});
+  epicSocial=new AccountSocial({provider:'epic',store:platformStore,onChange:platformChanged,renew:renewPlatform});
   const platformClient=provider=>{if(provider==='steam')return steamSocial;if(provider==='discord')return discordSocial;if(provider==='xbox')return xboxSocial;if(provider==='epic')return epicSocial;throw Error('This platform does not have a native connection configured yet.');};
   handle('accounts:link',provider=>{const current=['steam','discord'].includes(provider)?platformClient(provider).public():null;return social.linkIdentity(provider,current?.connected?current.accountId:undefined);});
   handle('accounts:poll',async intentId=>{const status=await social.action('identityStatus',{intentId});if(status.status==='linked'&&['xbox','epic'].includes(status.provider)){const session=await social.claimIdentitySession(intentId);await platformClient(status.provider).accept(session);}return status;});
