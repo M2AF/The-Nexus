@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, shell, safeStorage, utilityProcess, clipboard, Tray, Menu, globalShortcut, screen, nativeImage } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell, safeStorage, utilityProcess, clipboard, Tray, Menu, globalShortcut, screen, nativeImage, protocol } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
@@ -28,6 +28,7 @@ const {DesktopLifecycle,desktopPreferences}=require('./lib/desktop-lifecycle');
 const {NativeOverlay}=require('./lib/native-overlay');
 const {Updater,installTarget}=require('./lib/updater');
 app.setName('The Nexus');
+protocol.registerSchemesAsPrivileged([{ scheme: 'nexus-art', privileges: { standard: true, secure: true } }]);
 if (process.env.NEXUS_TEST_DATA) app.setPath('userData', process.env.NEXUS_TEST_DATA);
 const primaryInstance=app.requestSingleInstanceLock();if(!primaryInstance)app.quit();
 let win, stateFile, scanJob, social, installations, steamSocial, discordSocial, xboxSocial, epicSocial, desktop, nativeOverlay;
@@ -39,9 +40,35 @@ function save() {
   fs.writeFileSync(stateFile + '.tmp', JSON.stringify(state, null, 2));
   fs.renameSync(stateFile + '.tmp', stateFile);
 }
-function snapshot() {
+// Artwork files the renderer may load, keyed by an opaque token. Only paths that
+// a snapshot has handed out are served by the nexus-art: protocol.
+const artFiles = new Map();
+const artType = file => /\.png$/i.test(file) ? 'image/png' : 'image/jpeg';
+function artUrl(file) {
+  const stat = fs.statSync(file);
+  if (!stat.isFile() || stat.size >= 5e6) return null;
+  const token = createHash('sha256').update(file).digest('hex').slice(0, 32);
+  artFiles.set(token, file);
+  return `nexus-art://img/${token}?v=${Math.floor(stat.mtimeMs)}`;
+}
+function serveArt(request) {
+  try {
+    const url = new URL(request.url);
+    const file = url.hostname === 'img' && artFiles.get(url.pathname.slice(1));
+    if (!file) return new Response(null, { status: 404 });
+    return fs.promises.readFile(file).then(
+      bytes => new Response(bytes, { headers: { 'content-type': artType(file), 'cache-control': 'max-age=31536000, immutable' } }),
+      () => new Response(null, { status: 404 }));
+  } catch { return new Response(null, { status: 400 }); }
+}
+// embed: inline files as data URLs (used for exports that leave the app).
+function snapshot({ embed = false } = {}) {
   const cachedArt = file => {
-    try { if (file && /\.(jpg|png)$/i.test(file) && fs.statSync(file).size < 5e6) return `data:image/${/\.png$/i.test(file) ? 'png' : 'jpeg'};base64,${fs.readFileSync(file).toString('base64')}`; } catch { /* cache unavailable */ }
+    try {
+      if (!file || !/\.(jpg|png)$/i.test(file)) return null;
+      if (!embed) return artUrl(file);
+      if (fs.statSync(file).size < 5e6) return `data:${artType(file)};base64,${fs.readFileSync(file).toString('base64')}`;
+    } catch { /* cache unavailable */ }
     return null;
   };
   const installed=state.games.map(({ launchTarget, portraitPath, headerPath, ...game }) => {
@@ -96,6 +123,7 @@ function scan() {
   return scanJob;
 }
 if(primaryInstance)app.whenReady().then(() => {
+  protocol.handle('nexus-art', serveArt);
   const runningGames=new RunningGames();app.once('before-quit',()=>runningGames.close());
   if(process.platform==='win32')app.setAppUserModelId('com.mancave.thenexus');
   state.libraryRoots = [path.join(app.getPath('documents'),'Games')];
@@ -213,7 +241,10 @@ if(primaryInstance)app.whenReady().then(() => {
   handle('platforms:invite',async(provider,id,gameKey,mode,ownerId)=>{const account=invitationFriend(provider,id);if(account.accountId!==ownerId)throw Error('Your account changed. Reopen the invitation.');const game=invitationGame(gameKey);if(mode==='native'){if(provider!=='steam'||game.provider!=='steam')throw Error('This platform does not expose a joinable session.');return steamSocial.invite(id,String(game.catalogId||game.id));}if(!['message','copy'].includes(mode))throw Error('Unknown invitation action.');const text='Want to play '+String(game.name).replace(/[\r\n\x00-\x1f]/g,' ').slice(0,200)+' with me?';if(mode==='copy'){clipboard.writeText(text);return {success:true,kind:'copied'};}if(!['steam','discord'].includes(provider))throw Error('Messaging is not connected for this platform. Copy the invitation instead.');await platformClient(provider).send(id,text);return {success:true,kind:'message'};});
   handle('platforms:steam-library',()=>steamSocial.syncLibrary());
   handle('platforms:achievements',key=>{const game=snapshot().games.find(game=>game.key===key);if(!game||game.provider!=='steam')throw Error('Achievements require a connected, supported platform game.');return steamSocial.achievements(game.catalogId||game.id);});
-  steamSocial.restore();discordSocial.restore();xboxSocial.restore();epicSocial.restore();
+  // A remembered Steam login loads steam-user (~1s); let the first page paint first.
+  let steamRestored=false;const restoreSteam=()=>{if(steamRestored)return;steamRestored=true;steamSocial.restore();};
+  win.webContents.once('did-finish-load',restoreSteam);win.webContents.once('did-fail-load',restoreSteam);
+  discordSocial.restore();xboxSocial.restore();epicSocial.restore();
   app.once('before-quit',()=>{steamSocial.close();discordSocial.close();xboxSocial.close();epicSocial.close();});
   const openInstallClient=async game=>{
     const plan=clientPlan(game);
@@ -303,7 +334,7 @@ if(primaryInstance)app.whenReady().then(() => {
   handle('library:export', async () => {
     const result = await dialog.showSaveDialog(win, { defaultPath: 'The-Nexus-library.json', filters: [{ name: 'JSON', extensions: ['json'] }] });
     if (result.canceled) return { canceled: true };
-    fs.writeFileSync(result.filePath, JSON.stringify(snapshot(), null, 2)); return { success: true };
+    fs.writeFileSync(result.filePath, JSON.stringify(snapshot({ embed: true }), null, 2)); return { success: true };
   });
   let preferences;try{preferences=desktopPreferences(state.desktop||{});}catch{preferences=desktopPreferences();}
   const overlayResources=path.join(app.isPackaged?process.resourcesPath:path.join(__dirname,'native'),'overlay');
