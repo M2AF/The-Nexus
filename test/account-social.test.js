@@ -29,7 +29,7 @@ test('Epic friends exclude blocked accounts, keep unknown presence honest and ne
 });
 test('Xbox uses authenticated fixed endpoints and maps real profile/presence fields',async()=>{
  const social=new AccountSocial({provider:'xbox',store:store(),now:()=>1000,fetchImpl:async(url,options)=>{assert.equal(options.headers.Authorization,'XBL3.0 x=123;private-token');let data;if(url.includes('social.xboxlive'))data={people:[{xuid:'2533274800000002'}],totalCount:1};else if(url.includes('profile.xboxlive'))data={profileUsers:[{id:xbox,settings:[{id:'Gamertag',value:'Owner'}]},{id:'2533274800000002',settings:[{id:'Gamertag',value:'Friend'},{id:'GameDisplayPicRaw',value:'https://images-eds.xboxlive.com/image/test'}]}]};else data=[{xuid:'2533274800000002',state:'Online',devices:[{titles:[{name:'Forza',state:'active'}]}]}];return {ok:true,json:async()=>data};}});
- await social.accept({provider:'xbox',accountId:xbox,token:'private-token',userHash:'123',expiresAt:100000});const state=social.public();assert.equal(state.friends[0].playing,'Forza');assert.equal(state.friends[0].online,true);assert.equal(state.friends[0].name,'Friend');assert(state.friends[0].avatar);assert.equal(state.canMessage,false);assert(!JSON.stringify(state).includes('private-token'));assert.equal(social.disconnect().connected,false);
+ await social.accept({provider:'xbox',accountId:xbox,token:'private-token',userHash:'123',expiresAt:100000});const state=social.public();assert.equal(state.friends[0].playing,'Forza');assert.equal(state.friends[0].online,true);assert.equal(state.friends[0].name,'Friend');assert(state.friends[0].avatar);assert.equal(state.canMessage,true);assert.equal(state.friends[0].canMessage,true);assert(!JSON.stringify(state).includes('private-token'));assert.equal(social.disconnect().connected,false);
 });
 test('Disconnect during refresh discards stale data and invalid sessions fail closed',async()=>{
  let resolve;const waiting=new Promise(done=>resolve=done),social=new AccountSocial({provider:'epic',store:store(),now:()=>1000,fetchImpl:async()=>{await waiting;return {ok:true,json:async()=>({friends:[],blockList:[]})};}});
@@ -92,4 +92,28 @@ test('Disconnecting during a renewal wins, and a renewal for another account is 
  const other=store();other.set('xbox',{provider:'xbox',accountId:xbox,token:'old',userHash:'1',expiresAt:500,refreshToken:'r1'});
  const b=new AccountSocial({provider:'xbox',store:other,now:()=>1000,timers:timers(),renew:async()=>({provider:'xbox',accountId:'2533274800000009',token:'new',userHash:'1',expiresAt:9e12})});
  b.restore();await b.renewing;assert.equal(b.public().status,'disconnected');assert.equal(other.get('xbox'),null);
+});
+
+test('Xbox messages read the friend conversation, send text parts, and reject non-friends and Epic',async()=>{
+ const peer='2533274800000002',calls=[];let chat={ok:true,status:200,json:async()=>({messages:[
+  {messageId:'1',sender:peer,timestamp:'2026-11-16T10:00:00Z',contentPayload:{content:{parts:[{contentType:'text',version:0,text:'hi '},{contentType:'text',version:0,text:'there'}]}}},
+  {messageId:'2',sender:xbox,timestamp:'2026-11-16T10:01:00Z',contentPayload:{content:{parts:[{contentType:'text',version:0,text:'yo'}]}}},
+  {messageId:'3',sender:peer,timestamp:'2026-11-16T10:02:00Z',isDeleted:true,contentPayload:{content:{parts:[{contentType:'text',text:'gone'}]}}},
+  {messageId:'4',sender:'2533274800000077',timestamp:'2026-11-16T10:03:00Z',contentPayload:{content:{parts:[{contentType:'text',text:'stranger'}]}}},
+  {messageId:'5',sender:peer,timestamp:'2026-11-16T10:04:00Z',contentPayload:{content:{parts:[{contentType:'image',locator:'x'}]}}}]})};
+ const social=new AccountSocial({provider:'xbox',store:store(),now:()=>1000,fetchImpl:async(url,options)=>{calls.push({url,options});if(url.includes('peoplehub.xboxlive'))return {ok:true,json:async()=>({people:[{xuid:peer,isFriend:true,gamertag:'Friend'}]})};if(url.includes('xblmessaging'))return options.method==='POST'?{ok:true,json:async()=>({messageId:'9',conversationId:'c'})}:chat;return {ok:true,json:async()=>({profileUsers:[]})};}});
+ await social.accept({provider:'xbox',accountId:xbox,token:'private-token',userHash:'123',expiresAt:100000,name:'Owner'});
+ const result=await social.messages(peer),read=calls.find(call=>call.url.includes('xblmessaging'));
+ assert.equal(read.url,'https://xblmessaging.xboxlive.com/network/Xbox/users/me/conversations/users/xuid('+peer+')?maxItems=50');assert.equal(read.options.method,'GET');assert.equal(read.options.headers['x-xbl-contract-version'],'1');assert.equal(read.options.headers.Authorization,'XBL3.0 x=123;private-token');
+ assert.deepEqual(result.messages.map(m=>[m.sender,m.text]),[[peer,'hi there'],[xbox,'yo'],[peer,'[This Xbox message type is not supported in The Nexus]']]);assert.equal(result.messages[0].at,Date.parse('2026-11-16T10:00:00Z'));
+ assert.deepEqual(await social.send(peer,'gg'),{success:true});const sent=calls.at(-1);
+ assert.equal(sent.options.method,'POST');assert.equal(sent.url,'https://xblmessaging.xboxlive.com/network/Xbox/users/me/conversations/users/xuid('+peer+')');assert.deepEqual(JSON.parse(sent.options.body),{parts:[{contentType:'text',version:0,text:'gg'}]});
+ const before=calls.length;
+ await assert.rejects(social.send(peer,'x'.repeat(257)),/up to 256/);await assert.rejects(social.send(peer,'  '),/up to 256/);
+ await assert.rejects(social.messages('2533274800000077'),/current Xbox friend/);await assert.rejects(social.send('2533274800000077','hi'),/current Xbox friend/);assert.equal(calls.length,before);
+ chat={ok:false,status:404};assert.deepEqual(await social.messages(peer),{messages:[]});
+ chat={ok:false,status:403};await assert.rejects(social.messages(peer),/privacy settings/);
+ chat={ok:false,status:500};await assert.rejects(social.messages(peer),/temporarily unavailable/);
+ social.disconnect();await assert.rejects(social.messages(peer),/expired/);
+ const epicSocial=new AccountSocial({provider:'epic',store:store(),fetchImpl:async()=>({ok:true,json:async()=>({})})});assert.equal(epicSocial.public().canMessage,false);await assert.rejects(epicSocial.messages(friend),/Epic Games messaging is not available/);
 });
