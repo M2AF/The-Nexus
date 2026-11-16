@@ -8,8 +8,8 @@ lease_until: -
 repo: .
 verify: npm run check && npm test
 verified: 9bc04ad · npm run check + npm test (101/102) · 2026-11-14T18:50-04:00
-head: 9bc04ad (feature/updates-and-trailers) dirty 2
-updated: 2026-11-14T18:50-04:00 · claude
+head: 97a1e64 (fix/xbox-epic-session-renewal) dirty 6
+updated: 2026-11-16T15:01-04:00 · claude
 
 resources: -
 
@@ -23,7 +23,7 @@ resources: -
 - Future (user-chosen): a Nexus-OWNED independent OS-layer overlay (its own entity, NOT a Game Bar widget) for anti-cheat games — see docs/GAME-OVERLAY-ARCHITECTURE.md.
 
 ## Next
-- Live test on a non-anti-cheat game the user picks
+- With user approval: commit, push, PR; ship after ChainLens renewal endpoint is deployed.
 
 ## Traps
 - COMMIT WIP even half-finished: the whole native/overlay source was lost on 2026-11-14 because it was left untracked and another agent's branch/clean removed it. Never leave feature work untracked.

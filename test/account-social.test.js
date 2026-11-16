@@ -50,3 +50,46 @@ test('Xbox PeopleHub loads names, pictures and game presence without friend prof
  clock+=600001;await restored.refresh(true);assert.equal(restored.public().friends[0].name,'Real friend#1234');
  const other=new AccountSocial({provider:'xbox',store:store(),now:()=>clock,fetchImpl});await other.accept({...saved.get('xbox'),accountId:'2533274800000099'});assert.equal(other.public().friends[0].name,'Xbox friend \u00b7 0002');
 });
+// Fake timers: record scheduled renewals so tests can fire them on demand.
+const timers=()=>{const pending=new Map();let id=0;return {pending,set:(fn,ms)=>{pending.set(++id,{fn,ms});return id;},clear:key=>pending.delete(key),fire:()=>{const [key,{fn}]=[...pending][0];pending.delete(key);fn();}};};
+const epicFetch=async url=>url.includes('/friends/')?{ok:true,json:async()=>({friends:[]})}:{ok:true,json:async()=>[{accountId:epic,displayName:'Me'}]};
+test('An expired saved session with a refresh token renews on restore instead of disconnecting',async()=>{
+ let clock=10_000_000;const saved=store(),calls=[];saved.set('epic',{provider:'epic',accountId:epic,token:'old',expiresAt:clock-1,refreshToken:'r1',refreshExpiresAt:clock+3_600_000});
+ const social=new AccountSocial({provider:'epic',store:saved,now:()=>clock,fetchImpl:epicFetch,timers:timers(),renew:async request=>{calls.push(request);return {provider:'epic',accountId:epic,token:'new',expiresAt:clock+7_200_000,refreshToken:'r2'};}});
+ assert.equal(social.restore().status,'connecting');await social.renewing;await social.loading;
+ assert.deepEqual(calls,[{provider:'epic',accountId:epic,refreshToken:'r1'}]);
+ const state=social.public();assert.equal(state.status,'connected');assert.equal(state.name,'Me');
+ assert.equal(saved.get('epic').token,'new');assert.equal(saved.get('epic').refreshToken,'r2');
+});
+test('A session without a refresh token, or with an expired one, is still discarded on restore',()=>{
+ for(const extra of [{},{refreshToken:'r1',refreshExpiresAt:999}]){const saved=store();saved.set('epic',{provider:'epic',accountId:epic,token:'old',expiresAt:500,...extra});
+  const social=new AccountSocial({provider:'epic',store:saved,now:()=>1000,renew:async()=>{throw Error('should not renew');}});assert.equal(social.restore().status,'disconnected');assert.equal(saved.get('epic'),null);}
+});
+test('Renewal is scheduled before expiry and keeps the old refresh token when the provider does not rotate it',async()=>{
+ let clock=1000;const saved=store(),clock2=timers();
+ const social=new AccountSocial({provider:'epic',store:saved,now:()=>clock,fetchImpl:epicFetch,timers:clock2,renew:async()=>({provider:'epic',accountId:epic,token:'t2',expiresAt:clock+3_600_000})});
+ await social.accept({provider:'epic',accountId:epic,token:'t1',expiresAt:clock+3_600_000,refreshToken:'r1'});
+ const [{ms}]=[...clock2.pending.values()];assert.equal(ms,3_600_000-300_000);
+ clock+=3_400_000;clock2.fire();await social.renewing;await social.loading;
+ assert.equal(saved.get('epic').token,'t2');assert.equal(saved.get('epic').refreshToken,'r1');assert.equal(social.public().status,'connected');
+});
+test('A revoked grant clears the account; a transient failure keeps the refresh token and retries later',async()=>{
+ let clock=1000;
+ const revoked=store();revoked.set('epic',{provider:'epic',accountId:epic,token:'old',expiresAt:500,refreshToken:'r1'});
+ const a=new AccountSocial({provider:'epic',store:revoked,now:()=>clock,timers:timers(),renew:async()=>{throw Object.assign(Error('Your platform sign-in expired.'),{reconnect:true});}});
+ a.restore();await a.renewing;assert.equal(a.public().status,'disconnected');assert.equal(revoked.get('epic'),null);assert.match(a.public().error,/Connect it again/);
+ const flaky=store(),t=timers();flaky.set('epic',{provider:'epic',accountId:epic,token:'old',expiresAt:500,refreshToken:'r1'});let attempts=0;
+ const b=new AccountSocial({provider:'epic',store:flaky,now:()=>clock,fetchImpl:epicFetch,timers:t,renew:async()=>{if(++attempts===1)throw Error('Sign in to ChainLens to continue.');return {provider:'epic',accountId:epic,token:'new',expiresAt:clock+3_600_000};}});
+ b.restore();await b.renewing;assert.equal(b.public().status,'expired');assert.equal(flaky.get('epic').refreshToken,'r1');assert.match(b.public().error,/Retrying automatically/);
+ await b.refresh(true);assert.equal(attempts,1,'refresh respects the retry delay');
+ clock+=300_000;await b.refresh(true);assert.equal(attempts,2);assert.equal(b.public().status,'connected');assert.equal(t.pending.size,1);
+});
+test('Disconnecting during a renewal wins, and a renewal for another account is rejected',async()=>{
+ let release;const saved=store();saved.set('xbox',{provider:'xbox',accountId:xbox,token:'old',userHash:'1',expiresAt:500,refreshToken:'r1'});
+ const a=new AccountSocial({provider:'xbox',store:saved,now:()=>1000,timers:timers(),renew:()=>new Promise(resolve=>release=resolve)});
+ a.restore();a.disconnect();release({provider:'xbox',accountId:xbox,token:'new',userHash:'1',expiresAt:9e12});await new Promise(setImmediate);
+ assert.equal(a.public().status,'disconnected');assert.equal(saved.get('xbox'),null);
+ const other=store();other.set('xbox',{provider:'xbox',accountId:xbox,token:'old',userHash:'1',expiresAt:500,refreshToken:'r1'});
+ const b=new AccountSocial({provider:'xbox',store:other,now:()=>1000,timers:timers(),renew:async()=>({provider:'xbox',accountId:'2533274800000009',token:'new',userHash:'1',expiresAt:9e12})});
+ b.restore();await b.renewing;assert.equal(b.public().status,'disconnected');assert.equal(other.get('xbox'),null);
+});

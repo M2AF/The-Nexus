@@ -36,3 +36,11 @@
 - verified: npm run check + npm test (101/102)
 - Added anti-cheat guard (lib/anti-cheat.js): refuses native injection into anti-cheat games (file markers + process scan), before create/attach. 5 unit tests, 101/102 pass, check green. Documented future Nexus-owned OS-layer overlay (not a Game Bar widget) in GAME-OVERLAY-ARCHITECTURE.md.
 - next: Live test on a non-anti-cheat game the user picks
+
+### 2026-11-16T14:55-04:00 · claude · claim · 97a1e64 (main) dirty 1
+- task: Xbox/Epic session renewal via ChainLens refresh endpoint
+- lease until 2026-11-16T17:55-04:00
+
+### 2026-11-16T15:01-04:00 · claude · handoff · 97a1e64 (fix/xbox-epic-session-renewal) dirty 6
+- Branch fix/xbox-epic-session-renewal (uncommitted): AccountSocial keeps refreshToken, renews on restore/before expiry/after transient failure via ChainLens renewIdentitySession; revoked grant clears account. chainlens-client errors carry status+reconnect. npm run check + npm test 113 pass/1 skip; app launch clean.
+- next: With user approval: commit, push, PR; ship after ChainLens renewal endpoint is deployed.
