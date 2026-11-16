@@ -36,7 +36,7 @@
   if(selected&&!friends().some(friend=>ref(friend)===ref(selected))){window.NexusChainLens.unmount();selected=null;epoch++;$('platform-messages').replaceChildren();}
   const current=selected&&contacts().find(contact=>contact.members.some(account=>ref(account)===ref(selected)));
   $('platform-conversation').hidden=!selected;$('platform-dialog').classList.toggle('has-conversation',!!selected);
-  $('platform-compose').disabled=!selected||sending;$('platform-send').disabled=!selected||sending;
+  const readOnly=!!selected?.chatReadOnly;$('platform-compose').disabled=!selected||sending||readOnly;$('platform-send').disabled=!selected||sending||readOnly;$('platform-compose').placeholder=readOnly?selected.chatNote||'Message history only.':'Message your friend…';for(const button of document.querySelectorAll('[data-quick-reply]'))button.disabled=readOnly;
   const signature=(current?.members||[]).map(account=>ref(account)+account.name).join('|');if($('platform-route').dataset.signature!==signature){$('platform-route').dataset.signature=signature;$('platform-route').replaceChildren(...(current?.members||[]).filter(account=>account.canMessage!==false).map(account=>{const option=el('option','',names[account.provider]+' · '+account.name);option.value=ref(account);option.selected=ref(account)===ref(selected);return option;}));}if(selected)$('platform-route').value=ref(selected);$('platform-unmerge').hidden=!current||current.members.length<2;
   if(focusKey)$('platform-dialog').querySelector('[data-platform-focus="'+CSS.escape(focusKey)+'"]')?.focus({preventScroll:true});
   if(focused)$('platform-friends').querySelector('[data-friend-ref="'+CSS.escape(focused)+'"]')?.focus({preventScroll:true});
